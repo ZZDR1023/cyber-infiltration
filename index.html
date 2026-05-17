@@ -28,7 +28,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      touch-action: none;
+      touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -60,6 +60,7 @@
       background: rgba(0, 0, 0, 0.32);
       box-shadow: 0 0 24px rgba(0, 255, 136, 0.08);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       font-size: 13px;
       line-height: 1.55;
       letter-spacing: 0.03em;
@@ -86,6 +87,7 @@
       justify-content: center;
       background: radial-gradient(circle at center, rgba(8, 18, 16, 0.68), rgba(0, 0, 0, 0.92) 64%, rgba(0, 0, 0, 0.98));
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .panel {
@@ -336,6 +338,23 @@
       50% { opacity: 1; text-shadow: 0 0 12px rgba(255, 51, 85, 0.6); }
     }
 
+    @media (pointer: coarse), (max-width: 768px) {
+      .hud,
+      #hudRight,
+      #hudBottom,
+      #emergencyRestartBtn,
+      .overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .panel,
+      .lock-box,
+      .report-box {
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.68);
+      }
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -385,7 +404,7 @@
             <div style="margin-bottom:8px;"><strong style="color:#78f0ff;">🎮 操作方式</strong></div>
             <div>· 左右倾斜手机控制蓝色数据球移动（默认灵敏度 0.8x）</div>
             <div>· 可通过下方滑块调节灵敏度（0.6x ~ 1.4x）</div>
-            <div>· <strong style="color:#ffd700;">双击屏幕</strong>战术重置：当前姿态成为新零点 + 清空近距离威胁 + 0.8 秒无敌（5 秒冷却）</div>
+            <div>· <strong style="color:#ffd700;">双击屏幕</strong>释放技能「防火墙干扰」：清空近距离威胁 + 0.8 秒无敌（5 秒冷却）</div>
 
             <div style="margin:10px 0 8px;"><strong style="color:#78f0ff;">🎯 游戏目标</strong></div>
             <div>· 躲避从深处逼近的红色防火墙</div>
@@ -903,6 +922,8 @@
         w: 0,
         h: 0,
         dpr: 1,
+        perf: 'high',
+        isMobile: false,
         cx: 0,
         cy: 0,
         outerRadius: 0,
@@ -934,6 +955,8 @@
         playerTrailHistory: [],
         shake: { timer: 0, maxTimer: 0, mag: 0 },
         flashAlpha: 0,
+        zoneShock: 0,
+        idleRendered: false,
         frameCount: 0,
         powerups: [],
         activePowerups: { shield: 0, slow: 0, doubleScore: 0, invincible: 0 },
@@ -1003,9 +1026,12 @@
       }
 
       function resize() {
-        state.dpr = window.devicePixelRatio || 1;
         state.w = Math.floor(window.innerWidth);
         state.h = Math.floor(window.innerHeight);
+        state.isMobile = matchMedia('(pointer: coarse)').matches || Math.min(state.w, state.h) <= 768;
+        state.perf = state.isMobile ? 'mobile' : 'high';
+        const maxDpr = state.isMobile ? 1.35 : 2;
+        state.dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
         canvas.width = Math.floor(state.w * state.dpr);
         canvas.height = Math.floor(state.h * state.dpr);
         canvas.style.width = state.w + 'px';
@@ -1160,6 +1186,8 @@
         state.sparks.length = 0;
         state.trails.length = 0;
         state.flashAlpha = 0;
+        state.zoneShock = 0;
+        state.idleRendered = false;
         state.frameCount = 0;
         state.powerups.length = 0;
         state.activePowerups = { shield: 0, slow: 0, doubleScore: 0, invincible: 0 };
@@ -1213,6 +1241,7 @@
         state.sparks.length = 0;
         state.rotation = 0;
         state.mode = 'running';
+        state.idleRendered = false;
         state.player.angle = Math.PI / 2;
         state.player.targetAngle = Math.PI / 2;
         state.tilt = 0;
@@ -1436,7 +1465,7 @@
           state.highScore = state.score;
           try { localStorage.setItem('cyber_highscore', String(state.highScore)); } catch (e) {}
         }
-        saveLeaderboard(state.score, state.surviveLocked);
+        saveLeaderboard(state.score, state.surviveLocked, state.alias);
         lockStateText.textContent = '追踪中...';
         lockNoise.textContent = '';
         setMode('locking');
@@ -1450,12 +1479,12 @@
         beginAiResolution(state.sessionId);
       }
 
-      function saveLeaderboard(score, time) {
+      function saveLeaderboard(score, time, alias) {
         try {
           const key = 'cyber_leaderboard';
           const raw = localStorage.getItem(key);
           const list = raw ? JSON.parse(raw) : [];
-          list.push({ score, time: parseFloat(time.toFixed(1)), date: Date.now() });
+          list.push({ alias: alias || '匿名骇客', score, time: parseFloat(time.toFixed(1)), date: Date.now() });
           list.sort((a, b) => b.score - a.score);
           localStorage.setItem(key, JSON.stringify(list.slice(0, 5)));
         } catch (e) {}
@@ -1540,15 +1569,17 @@
         lockOverlay.style.display = 'none';
         reportPanel.style.display = 'flex';
         emergencyRestartBtn.style.display = 'block';
-        reportMeta.textContent = `存活 ${state.surviveLocked.toFixed(1)} 秒`;
-        typeReport(`> 存活时长：${state.surviveLocked.toFixed(1)} 秒\n> 主脑裁决：\n${taunt}`);
+        const alias = state.alias || '匿名骇客';
+        reportMeta.textContent = `${alias} / 存活 ${state.surviveLocked.toFixed(1)} 秒`;
+        typeReport(`> 入侵代号：${alias}\n> 存活时长：${state.surviveLocked.toFixed(1)} 秒\n> 主脑裁决：\n${taunt}`);
         state.aiFinalText = taunt;
         state.aiText = taunt;
         renderScoreboard();
       }
 
       function renderScoreboard() {
-        let html = `<div>本次分数：<strong>${state.score}</strong> | 最高连击：<strong>x${state.maxCombo}</strong></div>`;
+        let html = `<div>入侵代号：<strong>${state.alias || '匿名骇客'}</strong></div>`;
+        html += `<div>本次分数：<strong>${state.score}</strong> | 最高连击：<strong>x${state.maxCombo}</strong></div>`;
         if (state.highScore > 0) {
           html += `<div>历史最高：<strong>${state.highScore}</strong></div>`;
         }
@@ -1558,7 +1589,7 @@
           if (list.length > 0) {
             html += '<div style="margin-top:6px; border-top:1px solid rgba(0,255,136,0.12); padding-top:6px;">排行榜：</div>';
             list.forEach((item, i) => {
-              html += `<div>${i + 1}. ${item.score} 分 / ${item.time}s</div>`;
+              html += `<div>${i + 1}. ${item.alias || '匿名骇客'}：${item.score} 分 / ${item.time}s</div>`;
             });
           }
         } catch (e) {}
@@ -1627,17 +1658,6 @@
         state.currentTime += dt * 1000;
         state.elapsed = (state.currentTime - state.startTime) / 1000;
         state.rotation += TUNNEL_ROT_SPEED * dt * (state.rushMode ? 2 : 1);
-
-        // 双击战术零点平滑回归：5 秒内从 gammaOffsetAtReset 线性衰减到 0
-        if (state.gammaOffsetAtReset !== 0) {
-          const sinceReset = state.currentTime / 1000 - state.lastTapResetTime;
-          if (sinceReset >= 0 && sinceReset < 5) {
-            state.gammaOffset = state.gammaOffsetAtReset * (1 - sinceReset / 5);
-          } else {
-            state.gammaOffset = 0;
-            state.gammaOffsetAtReset = 0;
-          }
-        }
 
         // 倾斜映射：gamma=±45° → 球抵达环顶部；中间线性 4× 放大（gamma=30° → 球转 120°）
         state.player.targetAngle = Math.PI / 2 - state.tilt * Math.PI;
@@ -1709,10 +1729,14 @@
         if (state.flashAlpha > 0) {
           state.flashAlpha = Math.max(0, state.flashAlpha - dt * 5);
         }
+        if (state.zoneShock > 0) {
+          state.zoneShock = Math.max(0, state.zoneShock - dt * 1.85);
+        }
       }
 
       function triggerFlash() {
-        state.flashAlpha = 0.6;
+        state.flashAlpha = 0.42;
+        state.zoneShock = 1;
       }
 
       // 道具系统
@@ -1937,22 +1961,55 @@
         ctx.fillStyle = mixColor(zone.current.main, zone.future.main, zone.t, 1);
         ctx.fillRect(0, 0, state.w, state.h);
 
-        const bg = ctx.createRadialGradient(cx, cy, inner * 0.3, cx, cy, outer * 1.45);
-        bg.addColorStop(0, 'rgba(40, 255, 120, 0.1)');
-        bg.addColorStop(0.46, 'rgba(0, 92, 36, 0.22)');
-        bg.addColorStop(1, 'rgba(0, 0, 0, 0.98)');
+        const bg = ctx.createRadialGradient(cx, cy, inner * 0.2, cx, cy, outer * 1.58);
+        bg.addColorStop(0, mixColor(zone.current.light, zone.future.light, zone.t, 0.16));
+        bg.addColorStop(0.22, mixColor(zone.current.accent, zone.future.accent, zone.t, 0.15));
+        bg.addColorStop(0.56, mixColor(zone.current.main, zone.future.main, zone.t, 0.7));
+        bg.addColorStop(1, 'rgba(0, 0, 0, 0.99)');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, state.w, state.h);
 
+        drawFarAtmosphere(zone, cx, cy, outer, inner);
         drawInteriorRibs(zone, cx, cy, outer, inner);
         drawWallPanels(zone, cx, cy, outer, inner);
-        drawDepthBands(cx, cy, outer, inner);
+        drawZoneGeometry(zone, cx, cy, outer, inner);
+        drawDepthBands(zone, cx, cy, outer, inner);
         drawCylinderSeparators(zone, cx, cy, outer);
         drawCoreDepth(zone, cx, cy, inner, outer);
       }
 
+      function drawFarAtmosphere(zone, cx, cy, outer, inner) {
+        ctx.save();
+        const time = state.currentTime * 0.001;
+        const count = state.isMobile
+          ? 10 + zone.index * 2 + (state.rushMode ? 6 : 0)
+          : 26 + zone.index * 5 + (state.rushMode ? 18 : 0);
+        for (let i = 0; i < count; i += 1) {
+          const seed = i * 12.9898;
+          const drift = ((time * (0.08 + zone.index * 0.018) + i * 0.061) % 1);
+          const angle = i * 2.399963 + state.rotation * 0.18 + Math.sin(time * 0.45 + seed) * 0.18;
+          const depth = Math.pow(drift, 1.55);
+          const radius = lerp(inner * 1.4, outer * 1.24, depth);
+          const x = cx + Math.cos(angle) * radius;
+          const y = cy + Math.sin(angle) * radius * state.tunnelScaleY;
+          const size = 0.8 + depth * 3.4 + (i % 3) * 0.5;
+          ctx.fillStyle = mixColor(zone.current.light, zone.future.light, zone.t, (0.025 + depth * 0.12) * (state.rushMode ? 1.55 : 1));
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, TAU);
+          ctx.fill();
+        }
+
+        const vignette = ctx.createRadialGradient(cx, cy, outer * 0.48, cx, cy, outer * 1.6);
+        vignette.addColorStop(0, 'rgba(0,0,0,0)');
+        vignette.addColorStop(0.72, 'rgba(0,0,0,0.18)');
+        vignette.addColorStop(1, 'rgba(0,0,0,0.72)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, state.w, state.h);
+        ctx.restore();
+      }
+
       function drawInteriorRibs(zone, cx, cy, outer, inner) {
-        const ribCount = 8;
+        const ribCount = state.isMobile ? 8 : 10 + (zone.index % 3) * 2;
         for (let i = 0; i < ribCount; i += 1) {
           const angle = (i / ribCount) * TAU + state.rotation * (zone.index === 1 ? 1.5 : 1);
           const twist = Math.sin(state.currentTime * 0.0009 + i) * 0.08 * (zone.index + 1);
@@ -1963,36 +2020,36 @@
           const sy = cy + Math.sin(a) * startR * state.tunnelScaleY;
           const ex = cx + Math.cos(a) * endR;
           const ey = cy + Math.sin(a) * endR * state.tunnelScaleY;
-          const alpha = i % 4 === 0 ? 0.34 : 0.14;
+          const alpha = i % 5 === 0 ? 0.48 : 0.18;
           ctx.beginPath();
           ctx.moveTo(sx, sy);
           ctx.lineTo(ex, ey);
           ctx.strokeStyle = mixColor(zone.current.accent, zone.future.accent, zone.t, alpha);
-          ctx.lineWidth = i % 4 === 0 ? 2.2 : 0.9;
-          ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.24);
-          ctx.shadowBlur = 0;
+          ctx.lineWidth = i % 5 === 0 ? 3.4 : 1.15;
+          ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.34);
+          ctx.shadowBlur = state.isMobile ? 0 : (i % 5 === 0 ? 12 : 4);
           ctx.stroke();
         }
         ctx.shadowBlur = 0;
       }
 
       function drawWallPanels(zone, cx, cy, outer, inner) {
-        const rings = 5;
+        const rings = state.isMobile ? 5 : 7;
         for (let i = 0; i < rings; i += 1) {
           const t = i / (rings - 1);
           const pulse = Math.sin(state.currentTime * 0.0018 + i * 0.9) * 0.02;
           const radius = lerp(inner, outer * 1.05, Math.pow(t, 1.55)) * (1 + pulse);
-          const segments = 8;
+          const segments = state.isMobile ? 6 : 8;
           const alpha = lerp(0.06, 0.36, t);
           for (let s = 0; s < segments; s += 1) {
             const start = (s / segments) * TAU + state.rotation * 0.22 + i * 0.025;
             const end = start + TAU / segments * (zone.index === 2 ? 0.66 : 0.82);
             ctx.beginPath();
             ctx.ellipse(cx, cy, radius, radius * state.tunnelScaleY, 0, start, end);
-            ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, alpha * (s % 5 === 0 ? 1.35 : 0.58));
-            ctx.lineWidth = lerp(0.7, 2.8, t) * (zone.index === 2 && s % 4 === 0 ? 1.8 : 1);
-            ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.22 * t);
-            ctx.shadowBlur = 0;
+            ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, alpha * (s % 5 === 0 ? 1.55 : 0.62));
+            ctx.lineWidth = lerp(0.65, 3.3, t) * (zone.index === 2 && s % 4 === 0 ? 1.8 : 1);
+            ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.3 * t);
+            ctx.shadowBlur = state.isMobile ? 0 : 2 + t * 10;
             ctx.stroke();
           }
         }
@@ -2000,12 +2057,17 @@
       }
 
       function drawSpeedLines(zone, cx, cy, outer, inner) {
-        const count = 14 + zone.index * 6;
+        const count = state.isMobile
+          ? 12 + zone.index * 3 + (state.rushMode ? 10 : 0)
+          : 22 + zone.index * 7 + (state.rushMode ? 26 : 0);
+        const speed = state.rushMode ? 0.00072 : 0.00034;
+        ctx.save();
+        ctx.lineCap = 'round';
         for (let i = 0; i < count; i += 1) {
-          const age = ((state.currentTime * 0.00025 * (1 + zone.index * 0.35) + i * 0.037) % 1);
-          const angle = (i * 2.399963 + state.rotation * 0.7 + age * (zone.index === 1 ? 1.2 : 0.2)) % TAU;
-          const r1 = lerp(inner, outer, Math.pow(age, 1.8));
-          const r2 = Math.min(outer * 1.08, r1 + outer * 0.11 * (0.4 + age));
+          const age = ((state.currentTime * speed * (1 + zone.index * 0.32) + i * 0.037) % 1);
+          const angle = (i * 2.399963 + state.rotation * 0.85 + age * (zone.index === 1 ? 1.35 : 0.32)) % TAU;
+          const r1 = lerp(inner * 0.75, outer * 0.98, Math.pow(age, 1.75));
+          const r2 = Math.min(outer * 1.18, r1 + outer * (0.13 + age * 0.18) * (state.rushMode ? 1.35 : 1));
           const x1 = cx + Math.cos(angle) * r1;
           const y1 = cy + Math.sin(angle) * r1 * state.tunnelScaleY;
           const x2 = cx + Math.cos(angle) * r2;
@@ -2013,23 +2075,97 @@
           ctx.beginPath();
           ctx.moveTo(x1, y1);
           ctx.lineTo(x2, y2);
-          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.08 + age * 0.25);
-          ctx.lineWidth = 0.8 + age * 1.8;
+          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.08 + age * (state.rushMode ? 0.42 : 0.3));
+          ctx.lineWidth = 0.7 + age * (state.rushMode ? 3.2 : 2.25);
+          ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.28);
+          ctx.shadowBlur = !state.isMobile && age > 0.72 ? 8 : 0;
           ctx.stroke();
         }
+        ctx.restore();
       }
 
-      function drawDepthBands(cx, cy, outer, inner) {
-        const bands = 7;
+      function drawZoneGeometry(zone, cx, cy, outer, inner) {
+        if (state.isMobile && state.mode === 'idle') return;
+        ctx.save();
+        const mode = zone.current.geometry;
+        if (mode === 'vortex') {
+          const arms = state.isMobile ? 3 : (zone.index === 3 ? 5 : 4);
+          for (let arm = 0; arm < arms; arm += 1) {
+            ctx.beginPath();
+            for (let k = 0; k < (state.isMobile ? 18 : 34); k += 1) {
+              const steps = state.isMobile ? 18 : 34;
+              const t = k / (steps - 1);
+              const radius = lerp(inner * 1.2, outer * 1.12, Math.pow(t, 1.24));
+              const angle = arm / arms * TAU + state.rotation * 0.75 + t * (2.2 + zone.index * 0.35);
+              const x = cx + Math.cos(angle) * radius;
+              const y = cy + Math.sin(angle) * radius * state.tunnelScaleY;
+              if (k === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, zone.index === 3 ? 0.23 : 0.16);
+            ctx.lineWidth = zone.index === 3 ? 2.2 : 1.4;
+            ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.28);
+            ctx.shadowBlur = state.isMobile ? 0 : (zone.index === 3 ? 12 : 7);
+            ctx.stroke();
+          }
+        } else if (mode === 'engine') {
+          const blades = state.isMobile ? 8 : 12;
+          for (let i = 0; i < blades; i += 1) {
+            const angle = i / blades * TAU + state.rotation * 0.55;
+            const width = outer * 0.055;
+            const length = outer * (zone.index === 4 ? 0.24 : 0.18);
+            const radius = outer * 0.6;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius * state.tunnelScaleY;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle + Math.PI / 2);
+            ctx.fillStyle = mixColor(zone.current.metal, zone.future.metal, zone.t, zone.index === 4 ? 0.48 : 0.34);
+            ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, zone.index === 4 ? 0.22 : 0.15);
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(-width, -length * 0.35);
+            ctx.lineTo(width, -length * 0.18);
+            ctx.lineTo(width * 0.45, length);
+            ctx.lineTo(-width * 0.55, length * 0.82);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          }
+        } else {
+          const slats = state.isMobile ? 6 : 9;
+          for (let i = 0; i < slats; i += 1) {
+            const t = i / (slats - 1);
+            const y = cy + (t - 0.5) * outer * state.tunnelScaleY * 1.72;
+            const skew = Math.sin(state.currentTime * 0.001 + i) * outer * 0.055;
+            ctx.beginPath();
+            ctx.moveTo(cx - outer * 1.18 + skew, y);
+            ctx.lineTo(cx + outer * 1.18 + skew, y - outer * 0.1);
+            ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, i % 2 === 0 ? 0.18 : 0.08);
+            ctx.lineWidth = i % 3 === 0 ? 2.6 : 1.1;
+            ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.18);
+            ctx.shadowBlur = !state.isMobile && i % 3 === 0 ? 8 : 0;
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawDepthBands(zone, cx, cy, outer, inner) {
+        const bands = state.isMobile ? 6 : 9;
         for (let i = 0; i < bands; i += 1) {
           const t = i / (bands - 1);
           const r = inner + Math.pow(t, 1.9) * (outer - inner);
           ctx.beginPath();
           ctx.ellipse(cx, cy, Math.floor(r), Math.floor(r * state.tunnelScaleY), 0, 0, TAU);
-          ctx.strokeStyle = `rgba(30, 255, 110, ${0.06 + t * 0.22})`;
-          ctx.lineWidth = 1 + t * 2.2;
+          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.045 + t * 0.28);
+          ctx.lineWidth = 0.85 + t * 2.7;
+          ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.16 * t);
+          ctx.shadowBlur = !state.isMobile && t > 0.68 ? 9 : 0;
           ctx.stroke();
         }
+        ctx.shadowBlur = 0;
       }
 
       function drawCylinderSeparators(zone, cx, cy, outer) {
@@ -2040,7 +2176,7 @@
         ctx.save();
         ctx.lineCap = 'round';
         ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.42);
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = state.isMobile ? 0 : 14;
         for (const y of [topY, bottomY]) {
           ctx.beginPath();
           ctx.moveTo(cx - width, y);
@@ -2071,10 +2207,10 @@
 
         ctx.beginPath();
         ctx.ellipse(cx, cy, outer * 1.03, outer * state.tunnelScaleY * 1.03, 0, 0, TAU);
-        ctx.strokeStyle = mixColor(zone.current.metal, zone.future.metal, zone.t, 0.65);
-        ctx.lineWidth = Math.max(18, outer * 0.08);
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 0;
+        ctx.strokeStyle = mixColor(zone.current.metal, zone.future.metal, zone.t, 0.78);
+        ctx.lineWidth = Math.max(22, outer * 0.095);
+        ctx.shadowColor = 'rgba(0,0,0,0.86)';
+        ctx.shadowBlur = state.isMobile ? 0 : 22;
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -2243,26 +2379,89 @@
         ctxRef.closePath();
       }
 
-      function drawBackgroundMist() {
-        const mistCount = 10;
+      function drawBackgroundMist(zone) {
+        ctx.save();
+        const mistCount = state.isMobile
+          ? 8 + zone.index + (state.rushMode ? 5 : 0)
+          : 18 + zone.index * 3 + (state.rushMode ? 12 : 0);
         for (let i = 0; i < mistCount; i += 1) {
           const t = i / mistCount;
-          const angle = t * TAU + state.rotation * 0.15;
-          const z = 0.2 + (i % 5) * 0.15;
-          const radius = state.outerRadius * (0.35 + z * 0.9);
+          const drift = ((state.currentTime * (state.rushMode ? 0.00055 : 0.00022) + i * 0.071) % 1);
+          const angle = t * TAU + state.rotation * 0.18 + Math.sin(drift * TAU + i) * 0.28;
+          const radius = state.outerRadius * (0.22 + Math.pow(drift, 1.3) * 1.02);
           const x = state.cx + Math.cos(angle) * radius;
           const y = state.cy + Math.sin(angle) * radius * state.tunnelScaleY;
-          ctx.fillStyle = i % 2 === 0 ? 'rgba(0, 255, 136, 0.035)' : 'rgba(0, 160, 255, 0.02)';
+          ctx.fillStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.025 + drift * 0.11);
           ctx.beginPath();
-          ctx.arc(x, y, 1.4 + (i % 3), 0, TAU);
+          ctx.arc(x, y, 1.2 + drift * 4.2 + (i % 3), 0, TAU);
           ctx.fill();
         }
+        ctx.restore();
+      }
+
+      function drawForegroundGates(zone) {
+        if (state.mode === 'idle') return;
+        ctx.save();
+        ctx.translate(state.cx, state.cy);
+        ctx.scale(1, state.tunnelScaleY);
+        const count = state.isMobile ? 3 : 5;
+        const base = state.outerRadius * 1.14;
+        const speed = state.rushMode ? 1.65 : 1;
+        for (let i = 0; i < count; i += 1) {
+          const phase = ((state.currentTime * 0.00016 * speed + i / count) % 1);
+          const radius = base + Math.pow(phase, 2.15) * state.outerRadius * 0.86;
+          const angle = i * 1.986 + state.rotation * 0.32 + phase * 0.8;
+          const span = 0.28 + (i % 2) * 0.14;
+          const thickness = state.outerRadius * (0.095 + phase * 0.075);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, -span, span);
+          ctx.strokeStyle = `rgba(0, 0, 0, ${0.42 + phase * 0.34})`;
+          ctx.lineWidth = thickness;
+          ctx.lineCap = 'butt';
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, radius - thickness * 0.42, -span * 0.9, span * 0.9);
+          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.08 + phase * 0.12);
+          ctx.lineWidth = Math.max(2, thickness * 0.08);
+          ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.16);
+          ctx.shadowBlur = state.isMobile ? 0 : 8;
+          ctx.stroke();
+          ctx.rotate(-angle);
+        }
+        ctx.restore();
+      }
+
+      function drawZoneShockwave(zone) {
+        if (state.zoneShock <= 0) return;
+        const p = 1 - state.zoneShock;
+        const radius = lerp(state.innerRadius * 1.8, state.outerRadius * 1.35, Math.pow(p, 0.72));
+        const alpha = state.zoneShock;
+        ctx.save();
+        ctx.translate(state.cx, state.cy);
+        ctx.scale(1, state.tunnelScaleY);
+        ctx.lineWidth = Math.max(3, state.outerRadius * (0.04 + p * 0.04));
+        ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.42 * alpha);
+        ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.62 * alpha);
+        ctx.shadowBlur = state.isMobile ? 0 : 24 * alpha;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, TAU);
+        ctx.stroke();
+        ctx.lineWidth *= 0.35;
+        ctx.strokeStyle = `rgba(255,255,255,${0.25 * alpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.72, 0, TAU);
+        ctx.stroke();
+        ctx.restore();
       }
 
       function render() {
         const zone = getZoneBlend();
         drawTunnel();
+        drawBackgroundMist(zone);
         drawSpeedLines(zone, state.cx, state.cy, state.outerRadius, state.innerRadius);
+        drawForegroundGates(zone);
+        drawZoneShockwave(zone);
 
         // 尾迹粒子
         drawTrails();
@@ -2356,7 +2555,7 @@
           ctx.font = 'bold 18px sans-serif';
           ctx.textAlign = 'center';
           ctx.shadowColor = state.itemNotify.color;
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = state.isMobile ? 0 : 10;
           ctx.fillText(state.itemNotify.text, state.w * 0.5, state.h * 0.35 - yOffset);
           ctx.restore();
         }
@@ -2366,7 +2565,7 @@
           const nowSec = state.currentTime / 1000;
           const remain = Math.max(0, 5 - (nowSec - state.lastTapResetTime));
           const ready = remain <= 0;
-          const label = ready ? '技能充能完毕' : `技能冷却 ${remain.toFixed(1)}s`;
+          const label = ready ? '双击技能就绪' : `技能冷却 ${remain.toFixed(1)}s`;
           const color = ready ? '#ffd700' : '#ff9696';
           // 仅当无 itemNotify 时显示完整；有 itemNotify 时仍保留但更低更小，避免遮挡
           const hasNotify = state.itemNotify && state.itemNotifyTimer > 0;
@@ -2376,7 +2575,7 @@
           ctx.font = hasNotify ? '13px sans-serif' : 'bold 15px sans-serif';
           ctx.textAlign = 'center';
           ctx.shadowColor = color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = state.isMobile ? 0 : 8;
           ctx.fillText(label, state.w * 0.5, state.h * 0.42);
           ctx.restore();
         }
@@ -2391,7 +2590,7 @@
           ctx.font = 'bold 16px sans-serif';
           ctx.textAlign = 'center';
           ctx.shadowColor = state.dodgeNotify.color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = state.isMobile ? 0 : 8;
           ctx.fillText(state.dodgeNotify.text, state.w * 0.5, state.h * 0.45 - yOffset);
           ctx.restore();
         }
@@ -2486,7 +2685,7 @@
         ctx.textBaseline = 'top';
         ctx.fillStyle = `rgba(255, 60, 80, ${blink})`;
         ctx.shadowColor = 'rgba(255, 0, 0, 0.9)';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = state.isMobile ? 0 : 20;
         const y = (state.h * 0.18) | 0;
         ctx.fillText(text, state.cx, y);
         ctx.restore();
@@ -2535,14 +2734,29 @@
         state.lastTs = ts;
 
         if (state.mode === 'running' && !state.paused) {
+          state.idleRendered = false;
           update(dt);
-        } else if (state.mode === 'locking') {
-          state.surviveLocked = state.elapsed;
-          if ((state.lockNoiseSeed++ % 8) === 0) animateLockNoiseIfNeeded();
+          render();
+          requestAnimationFrame(loop);
+          return;
         }
 
-        render();
-        requestAnimationFrame(loop);
+        if (state.mode === 'locking') {
+          state.idleRendered = false;
+          state.surviveLocked = state.elapsed;
+          if ((state.lockNoiseSeed++ % 8) === 0) animateLockNoiseIfNeeded();
+          render();
+          requestAnimationFrame(loop);
+          return;
+        }
+
+        if (!state.isMobile || !state.idleRendered || state.flashAlpha > 0 || state.zoneShock > 0) {
+          render();
+          state.idleRendered = state.isMobile && state.mode === 'idle';
+          requestAnimationFrame(loop);
+        } else {
+          setTimeout(() => requestAnimationFrame(loop), 250);
+        }
       }
 
       async function onStartPressed() {
@@ -2597,28 +2811,25 @@
       });
       window.addEventListener('pagehide', () => audio.suspendAll());
 
-      // 双击屏幕战术重置
+      // 双击屏幕技能
       let lastTapTime = 0;
       function performTacticalReset() {
         const nowSec = performance.now() / 1000;
         if (nowSec - state.lastTapResetTime < 5) {
-          state.itemNotify = { text: '重置冷却中', color: '#ff8888' };
+          state.itemNotify = { text: '技能冷却中', color: '#ff8888' };
           state.itemNotifyTimer = 0.8;
           if (audio.initialized) audio.playCollision();
           return;
         }
-        // 把近距离威胁推回远端
-        for (const obs of state.obstacles) {
-          if (obs.z < 0.45) {
-            obs.z = 0.7 + Math.random() * 0.1;
+        for (let i = state.obstacles.length - 1; i >= 0; i -= 1) {
+          if (state.obstacles[i].z < 0.45) {
+            state.obstacles.splice(i, 1);
           }
         }
-        state.gammaOffset = state.gamma;
-        state.gammaOffsetAtReset = state.gamma;
         state.activePowerups.invincible = Math.max(state.activePowerups.invincible, 0.8);
         state.flashAlpha = Math.max(state.flashAlpha, 0.4);
         triggerShake(0.15, 4);
-        state.itemNotify = { text: '战术重置', color: '#ffd700' };
+        state.itemNotify = { text: '防火墙干扰', color: '#ffd700' };
         state.itemNotifyTimer = 0.8;
         if (audio.initialized) audio.playPowerupPickup('speedBoost');
         state.lastTapResetTime = nowSec;
