@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#000000" />
-  <title>赛博潜入：突破防火墙</title>
+  <title>光球潜入：突破防火墙</title>
   <style>
     :root {
       --bg: #000;
@@ -90,14 +90,19 @@
 
     .panel {
       width: min(92vw, 560px);
+      max-height: calc(92vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
       border: 1px solid rgba(0, 255, 136, 0.22);
       border-radius: 20px;
       background: linear-gradient(180deg, rgba(4, 12, 14, 0.92), rgba(0, 0, 0, 0.8));
       box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.06) inset, 0 20px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 255, 136, 0.08);
       padding: 22px 20px 20px;
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 2px; }
 
     .panel::before {
       content: "";
@@ -225,14 +230,19 @@
 
     .lock-box {
       width: min(92vw, 620px);
+      max-height: calc(92vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
       border: 1px solid rgba(255, 51, 85, 0.24);
       border-radius: 20px;
       background: linear-gradient(180deg, rgba(20, 3, 8, 0.88), rgba(0, 0, 0, 0.88));
       box-shadow: 0 0 0 1px rgba(255, 51, 85, 0.08) inset, 0 20px 80px rgba(0, 0, 0, 0.66), 0 0 40px rgba(255, 51, 85, 0.12);
       padding: 22px 20px 18px;
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
+    .lock-box::-webkit-scrollbar { width: 4px; }
+    .lock-box::-webkit-scrollbar-thumb { background: rgba(255, 51, 85, 0.35); border-radius: 2px; }
 
     .lock-box h2 {
       margin: 0;
@@ -366,26 +376,28 @@
 
     <div class="overlay" id="startOverlay">
       <div class="panel">
-        <h1 class="title">赛博潜入：突破防火墙</h1>
+        <h1 class="title">光球潜入：突破防火墙</h1>
         <p class="subtitle">授权陀螺仪后开始潜入。蓝色数据球贴着外围环形轨道移动；隧道会随着存活时间切换不同主题区域。</p>
 
-        <details style="margin:16px 0; padding:12px; border:1px solid rgba(0,255,136,0.15); border-radius:12px; background:rgba(0,0,0,0.3);">
-          <summary style="color:var(--green); cursor:pointer; font-weight:700; font-size:14px;">📋 玩法说明（点击展开）</summary>
+        <details open style="margin:16px 0; padding:12px; border:1px solid rgba(0,255,136,0.15); border-radius:12px; background:rgba(0,0,0,0.3);">
+          <summary style="color:var(--green); cursor:pointer; font-weight:700; font-size:14px;">📋 玩法说明</summary>
           <div style="margin-top:10px; font-size:13px; line-height:1.8; color:rgba(218,253,232,0.8);">
             <div style="margin-bottom:8px;"><strong style="color:#78f0ff;">🎮 操作方式</strong></div>
-            <div>· 左右倾斜手机 45° 控制蓝色数据球移动</div>
-            <div>· 倾斜幅度越大，移动越远</div>
+            <div>· 左右倾斜手机控制蓝色数据球移动（默认灵敏度 0.8x）</div>
+            <div>· 可通过下方滑块调节灵敏度（0.6x ~ 1.4x）</div>
+            <div>· <strong style="color:#ffd700;">双击屏幕</strong>战术重置：当前姿态成为新零点 + 清空近距离威胁 + 0.8 秒无敌（5 秒冷却）</div>
 
             <div style="margin:10px 0 8px;"><strong style="color:#78f0ff;">🎯 游戏目标</strong></div>
             <div>· 躲避从深处逼近的红色防火墙</div>
-            <div>· 存活越久，分数越高</div>
-            <div>· 连续躲避可获得连击加成</div>
+            <div>· 成功躲避障碍物可获得分数（连击越多分越高）</div>
+            <div>· 存活越久，基础分数越高</div>
 
             <div style="margin:10px 0 8px;"><strong style="color:#78f0ff;">💡 道具说明</strong></div>
             <div>· <span style="color:#44d9ff;">蓝色圆圈 S</span> = 护盾（抵挡一次碰撞）</div>
             <div>· <span style="color:#ffaa00;">橙色圆圈 T</span> = 减速（障碍物变慢）</div>
             <div>· <span style="color:#ff44aa;">粉色圆圈 2x</span> = 双倍分（得分翻倍）</div>
             <div>· <span style="color:#ffd700;">金色星星 ★</span> = 加速道具（满5个触发刺激模式）</div>
+            <div>· <span style="color:#fff;">✨ 任意道具</span> = 拾取后附带 0.5 秒无敌</div>
           </div>
         </details>
 
@@ -397,8 +409,8 @@
         </div>
         <div class="status-chip"><span class="dot"></span><span id="sensorStatus">等待授权陀螺仪</span></div>
         <div class="tiny" style="margin-top:14px;">
-          灵敏度 <span id="sensitivityLabel">1.0x</span>
-          <input id="sensitivitySlider" type="range" min="0.6" max="1.4" step="0.1" value="1" style="width:100%; accent-color:#00ff66; margin-top:8px;" />
+          灵敏度 <span id="sensitivityLabel">0.8x</span>
+          <input id="sensitivitySlider" type="range" min="0.6" max="1.4" step="0.1" value="0.8" style="width:100%; accent-color:#00ff66; margin-top:8px;" />
         </div>
       </div>
     </div>
@@ -427,11 +439,12 @@
         <div id="scoreBoard" style="margin-top:12px; padding:10px 14px; border-radius:12px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15); font-size:13px; line-height:1.8; color:var(--green);"></div>
         <div class="footer-row">
           <div class="blink-text" id="reportMeta">已完成高维裁决</div>
-          <button id="restartBtn" class="btn secondary">强制重启</button>
         </div>
       </div>
     </div>
   </div>
+
+  <button id="emergencyRestartBtn" style="position:fixed; right:calc(16px + env(safe-area-inset-right, 0px)); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:9999; display:none; padding:12px 20px; border:2px solid #ff3355; border-radius:24px; background:rgba(255,51,85,0.22); color:#fff; font-weight:700; font-size:14px; letter-spacing:0.04em; box-shadow:0 0 24px rgba(255,51,85,0.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); cursor:pointer;">🔄 强制重启</button>
 
   <script>
     (() => {
@@ -446,7 +459,7 @@
       const lockStateText = document.getElementById('lockStateText');
       const reportText = document.getElementById('reportText');
       const reportMeta = document.getElementById('reportMeta');
-      const restartBtn = document.getElementById('restartBtn');
+      const emergencyRestartBtn = document.getElementById('emergencyRestartBtn');
       const startBtn = document.getElementById('startBtn');
       const aliasInput = document.getElementById('aliasInput');
       const sensitivitySlider = document.getElementById('sensitivitySlider');
@@ -478,21 +491,36 @@
         lfoGain: null,
         muted: false,
         initialized: false,
+        melodyGain: null,
+        melodyTimer: null,
+        melodyStep: 0,
+        melodyTempo: 480,
+        melodyScale: [220, 261.63, 329.63, 392, 440, 523.25, 392, 329.63],
+        rushActive: false,
 
         init() {
           if (this.initialized) return;
           try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.6;
-            this.masterGain.connect(this.ctx.destination);
+            this.masterGain.gain.value = 2.2;
+
+            this.compressor = this.ctx.createDynamicsCompressor();
+            this.compressor.threshold.value = -3;
+            this.compressor.knee.value = 8;
+            this.compressor.ratio.value = 3;
+            this.compressor.attack.value = 0.003;
+            this.compressor.release.value = 0.12;
+
+            this.masterGain.connect(this.compressor);
+            this.compressor.connect(this.ctx.destination);
 
             // 背景低频嗡鸣
             this.bgOsc = this.ctx.createOscillator();
             this.bgOsc.type = 'sine';
             this.bgOsc.frequency.value = 50;
             this.bgGain = this.ctx.createGain();
-            this.bgGain.gain.value = 0.12;
+            this.bgGain.gain.value = 0.45;
             this.bgOsc.connect(this.bgGain);
             this.bgGain.connect(this.masterGain);
 
@@ -507,6 +535,13 @@
 
             this.bgOsc.start();
             this.lfo.start();
+
+            // 旋律层
+            this.melodyGain = this.ctx.createGain();
+            this.melodyGain.gain.value = 0.7;
+            this.melodyGain.connect(this.masterGain);
+            this.scheduleMelody();
+
             this.initialized = true;
           } catch (e) {
             console.warn('[Audio] Web Audio API not available:', e);
@@ -522,10 +557,24 @@
         toggleMute() {
           this.muted = !this.muted;
           if (this.masterGain) {
-            this.masterGain.gain.setTargetAtTime(this.muted ? 0 : 0.6, this.ctx.currentTime, 0.05);
+            this.masterGain.gain.setTargetAtTime(this.muted ? 0 : 2.2, this.ctx.currentTime, 0.05);
           }
           muteBtn.textContent = this.muted ? '♪̸' : '♪';
           muteBtn.style.opacity = this.muted ? '0.4' : '1';
+        },
+
+        suspendAll() {
+          if (this.melodyTimer) {
+            clearTimeout(this.melodyTimer);
+            this.melodyTimer = null;
+          }
+          if (this.ctx && this.ctx.state === 'running') this.ctx.suspend();
+        },
+
+        resumeAll() {
+          if (!this.initialized || this.muted) return;
+          if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+          if (!this.melodyTimer) this.scheduleMelody();
         },
 
         setBgPitch(zoneIndex) {
@@ -612,6 +661,154 @@
           gain.connect(this.masterGain);
           osc.start(t);
           osc.stop(t + 0.12);
+        },
+
+        playPowerupPickup(type) {
+          if (!this.ctx || this.muted) return;
+          const t0 = this.ctx.currentTime;
+
+          if (type === 'shield') {
+            // 温暖的大调三和弦（sine），错开 0.06s 形成钟声
+            const chord = [523.25, 659.25, 783.99];
+            chord.forEach((f, i) => {
+              const t = t0 + i * 0.06;
+              const osc = this.ctx.createOscillator();
+              osc.type = 'sine';
+              osc.frequency.value = f;
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.22, t + 0.015);
+              g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+              osc.connect(g).connect(this.masterGain);
+              osc.start(t);
+              osc.stop(t + 0.5);
+            });
+          } else if (type === 'slow') {
+            // 沉重锯齿下滑，长 decay
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(480, t0);
+            osc.frequency.exponentialRampToValueAtTime(110, t0 + 0.45);
+            const g = this.ctx.createGain();
+            g.gain.setValueAtTime(0, t0);
+            g.gain.linearRampToValueAtTime(0.28, t0 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200;
+            osc.connect(filter).connect(g).connect(this.masterGain);
+            osc.start(t0);
+            osc.stop(t0 + 0.55);
+          } else if (type === 'doubleScore') {
+            // 急促双击 square 金币声
+            [0, 0.09].forEach((delay, i) => {
+              const t = t0 + delay;
+              const osc = this.ctx.createOscillator();
+              osc.type = 'square';
+              osc.frequency.setValueAtTime(i === 0 ? 880 : 1320, t);
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.16, t + 0.005);
+              g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+              osc.connect(g).connect(this.masterGain);
+              osc.start(t);
+              osc.stop(t + 0.1);
+            });
+          } else if (type === 'speedBoost') {
+            // 高音 triangle 急速上升 arpeggio
+            const notes = [1046.5, 1318.5, 1568, 1975.5];
+            notes.forEach((f, i) => {
+              const t = t0 + i * 0.05;
+              const osc = this.ctx.createOscillator();
+              osc.type = 'triangle';
+              osc.frequency.value = f;
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.18, t + 0.005);
+              g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+              osc.connect(g).connect(this.masterGain);
+              osc.start(t);
+              osc.stop(t + 0.15);
+            });
+          } else {
+            // fallback / invincible：上升 sawtooth 三连音
+            [523, 784, 1046].forEach((f, i) => {
+              const t = t0 + i * 0.05;
+              const osc = this.ctx.createOscillator();
+              osc.type = 'sawtooth';
+              osc.frequency.value = f;
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.16, t + 0.01);
+              g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+              osc.connect(g).connect(this.masterGain);
+              osc.start(t);
+              osc.stop(t + 0.2);
+            });
+          }
+        },
+
+        scheduleMelody() {
+          if (!this.ctx || !this.melodyGain) return;
+          const t = this.ctx.currentTime;
+          const stepSec = this.melodyTempo / 1000;
+          const freq = this.melodyScale[this.melodyStep % this.melodyScale.length];
+
+          const osc = this.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.6, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.001, t + stepSec * 0.85);
+          osc.connect(g).connect(this.melodyGain);
+          osc.start(t);
+          osc.stop(t + stepSec);
+
+          // 高八度装饰音（每 4 拍一次）
+          if (this.melodyStep % 4 === 2) {
+            const high = this.ctx.createOscillator();
+            high.type = 'sine';
+            high.frequency.value = freq * 2;
+            const hg = this.ctx.createGain();
+            hg.gain.setValueAtTime(0, t);
+            hg.gain.linearRampToValueAtTime(0.18, t + 0.01);
+            hg.gain.exponentialRampToValueAtTime(0.001, t + stepSec * 0.6);
+            high.connect(hg).connect(this.melodyGain);
+            high.start(t);
+            high.stop(t + stepSec * 0.65);
+          }
+
+          // RUSH 模式叠加低音鼓点
+          if (this.rushActive && this.melodyStep % 2 === 0) {
+            const sub = this.ctx.createOscillator();
+            sub.type = 'sawtooth';
+            sub.frequency.setValueAtTime(85, t);
+            sub.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+            const sg = this.ctx.createGain();
+            sg.gain.setValueAtTime(0.22, t);
+            sg.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+            sub.connect(sg).connect(this.melodyGain);
+            sub.start(t);
+            sub.stop(t + 0.2);
+          }
+
+          this.melodyStep += 1;
+          this.melodyTimer = setTimeout(() => this.scheduleMelody(), this.melodyTempo);
+        },
+
+        setRushMode(on) {
+          this.rushActive = !!on;
+          this.melodyTempo = on ? 260 : 480;
+          if (this.bgOsc && this.ctx) {
+            this.bgOsc.frequency.linearRampToValueAtTime(on ? 70 : 50, this.ctx.currentTime + 0.35);
+          }
+        },
+
+        resetMelody() {
+          this.melodyStep = 0;
+          this.rushActive = false;
+          this.melodyTempo = 480;
         }
       };
 
@@ -734,10 +931,12 @@
         obstacles: [],
         sparks: [],
         trails: [],
+        playerTrailHistory: [],
+        shake: { timer: 0, maxTimer: 0, mag: 0 },
         flashAlpha: 0,
         frameCount: 0,
         powerups: [],
-        activePowerups: { shield: 0, slow: 0, doubleScore: 0 },
+        activePowerups: { shield: 0, slow: 0, doubleScore: 0, invincible: 0 },
         powerupSpawnTimer: 15,
         achievements: [],
         achievementNotify: null,
@@ -748,6 +947,8 @@
         rushTimer: 0,
         itemNotify: null,
         itemNotifyTimer: 0,
+        dodgeNotify: null,
+        dodgeNotifyTimer: 0,
         showTutorial: false,
         tutorialTimer: 0,
         lockStart: 0,
@@ -757,13 +958,17 @@
         lockNoiseSeed: 0,
         activeZoneIndex: 0,
         gyroWaitTimer: 0,
-        sensitivity: 1,
-        gammaCenter: null,
+        sensitivity: 0.8,
+        tilt: 0,
+        gammaOffset: 0,
+        gammaOffsetAtReset: 0,
+        lastTapResetTime: -10,
         score: 0,
         highScore: 0,
         combo: 0,
         maxCombo: 0,
         lastZoneIndex: 0,
+        starSpawnTimer: 1.5,
         paused: false
       };
 
@@ -787,6 +992,14 @@
         let angle = value % TAU;
         if (angle < 0) angle += TAU;
         return angle;
+      }
+
+      function triggerShake(duration, magnitude) {
+        if (duration > state.shake.timer) {
+          state.shake.timer = duration;
+          state.shake.maxTimer = duration;
+          state.shake.mag = magnitude;
+        }
       }
 
       function resize() {
@@ -829,9 +1042,9 @@
           hudComboRow.style.display = 'none';
         }
         // 新手保护提示
-        if (state.mode === 'running' && state.elapsed < 15) {
+        if (state.mode === 'running' && state.elapsed < 5) {
           hudShieldRow.style.display = '';
-          hudShield.textContent = state.elapsed < 5 ? '激活中' : '即将结束';
+          hudShield.textContent = '激活中';
         } else {
           hudShieldRow.style.display = 'none';
         }
@@ -840,7 +1053,8 @@
         if (state.activePowerups.shield > 0) powerupHtml += `<div style="color:#44d9ff;">护盾 ${state.activePowerups.shield.toFixed(1)}s</div>`;
         if (state.activePowerups.slow > 0) powerupHtml += `<div style="color:#ffaa00;">减速 ${state.activePowerups.slow.toFixed(1)}s</div>`;
         if (state.activePowerups.doubleScore > 0) powerupHtml += `<div style="color:#ff44aa;">双倍分 ${state.activePowerups.doubleScore.toFixed(1)}s</div>`;
-        if (state.rushMode) powerupHtml += `<div style="color:#ffd700; font-weight:bold;">RUSH ${state.rushTimer.toFixed(1)}s</div>`;
+        if (state.activePowerups.invincible > 0) powerupHtml += `<div style="color:#fff; font-weight:bold;">无敌 ${state.activePowerups.invincible.toFixed(1)}s</div>`;
+        if (state.rushMode) powerupHtml += `<div style="color:#ffd700; font-weight:bold;">刺激 ${state.rushTimer.toFixed(1)}s</div>`;
         hudPowerups.innerHTML = powerupHtml;
         // 加速道具进度条
         if (state.mode === 'running') {
@@ -864,6 +1078,7 @@
         startOverlay.classList.toggle('hidden', nextMode !== 'idle');
         lockOverlay.style.display = (nextMode === 'locking') ? 'flex' : 'none';
         reportPanel.style.display = (nextMode === 'report') ? 'flex' : 'none';
+        emergencyRestartBtn.style.display = (nextMode === 'locking' || nextMode === 'report') ? 'block' : 'none';
         if (nextMode !== 'running') {
           state.paused = false;
           pauseOverlay.style.display = 'none';
@@ -887,11 +1102,10 @@
         const beta = typeof event.beta === 'number' ? event.beta : 45;
         state.gamma = gamma;
         state.beta = beta;
-        if (state.gammaCenter === null) state.gammaCenter = gamma;
-        const relativeGamma = gamma - state.gammaCenter;
-        // 45度倾斜覆盖一整圈 (2π)
-        const tilt = clamp((relativeGamma / 45) * state.sensitivity, -1, 1);
-        state.player.targetAngle = Math.PI / 2 + tilt * Math.PI * 2;
+        // 软零点：默认 0（手机正竖），双击屏幕时被设为当前 gamma
+        const relative = gamma - state.gammaOffset;
+        const tilt = clamp((relative / 45) * state.sensitivity, -1, 1);
+        state.tilt = tilt;
         state.gyroEnabled = true;
         window.clearTimeout(state.gyroWaitTimer);
         sensorStatus.textContent = `陀螺仪：γ ${gamma.toFixed(1)}°`;
@@ -948,30 +1162,39 @@
         state.flashAlpha = 0;
         state.frameCount = 0;
         state.powerups.length = 0;
-        state.activePowerups = { shield: 0, slow: 0, doubleScore: 0 };
+        state.activePowerups = { shield: 0, slow: 0, doubleScore: 0, invincible: 0 };
         state.powerupSpawnTimer = 15;
         state.achievementNotify = null;
         state.achievementNotifyTimer = 0;
         state.speedBoostCount = 0;
         state.rushMode = false;
         state.rushTimer = 0;
+        if (audio.initialized) audio.setRushMode(false);
         state.itemNotify = null;
         state.itemNotifyTimer = 0;
+        state.dodgeNotify = null;
+        state.dodgeNotifyTimer = 0;
         state.lockStart = 0;
         state.aiText = '';
         state.aiFinalText = '';
         state.lockNoiseSeed = 0;
         state.player.angle = Math.PI / 2;
         state.player.targetAngle = Math.PI / 2;
+        state.tilt = 0;
+        state.gammaOffset = 0;
+        state.gammaOffsetAtReset = 0;
+        state.lastTapResetTime = -10;
+        state.playerTrailHistory = [];
+        state.shake = { timer: 0, maxTimer: 0, mag: 0 };
         state.gamma = 0;
         state.beta = 0;
-        state.gammaCenter = null;
         state.gyroEnabled = false;
         state.aiTypingTimer = 0;
         state.score = 0;
         state.combo = 0;
         state.maxCombo = 0;
         state.lastZoneIndex = 0;
+        state.starSpawnTimer = 1.5;
         setMode('idle');
         sensorStatus.textContent = '等待授权陀螺仪';
         reportText.textContent = '';
@@ -992,8 +1215,8 @@
         state.mode = 'running';
         state.player.angle = Math.PI / 2;
         state.player.targetAngle = Math.PI / 2;
+        state.tilt = 0;
         state.gyroEnabled = false;
-        state.gammaCenter = null;
         // 首次游戏显示教学
         if (!localStorage.getItem('cyber_played')) {
           state.showTutorial = true;
@@ -1007,11 +1230,11 @@
 
       function getDifficultyFactor() {
         const t = state.elapsed;
-        if (t < 10) return 0.15;
-        if (t < 25) return lerp(0.15, 0.35, (t - 10) / 15);
-        if (t < 50) return lerp(0.35, 0.6, (t - 25) / 25);
-        if (t < 100) return lerp(0.6, 0.85, (t - 50) / 50);
-        return lerp(0.85, 1.2, Math.min(1, (t - 100) / 60));
+        if (t < 10) return 0.1;
+        if (t < 30) return lerp(0.1, 0.25, (t - 10) / 20);
+        if (t < 60) return lerp(0.25, 0.45, (t - 30) / 30);
+        if (t < 120) return lerp(0.45, 0.65, (t - 60) / 60);
+        return lerp(0.65, 0.8, Math.min(1, (t - 120) / 80));
       }
 
       function spawnObstacle() {
@@ -1025,7 +1248,7 @@
         const impactRotation = state.rotation + TUNNEL_ROT_SPEED * travelTime;
         const angleBase = angleAtImpact - impactRotation;
         const cells = [];
-        const size = rand(12, 17) + state.activeZoneIndex * 2.2;
+        const size = Math.min(rand(12, 17) + state.activeZoneIndex * 2.2, state.outerRadius);
         const cols = (centerThreat ? 4 + state.activeZoneIndex : 3 + state.activeZoneIndex + (Math.random() > 0.45 ? 1 : 0)) | 0;
         const rows = (centerThreat ? 4 : 2 + (Math.random() > 0.25 ? 1 : 0)) | 0;
         for (let y = 0; y < rows; y += 1) {
@@ -1119,18 +1342,26 @@
             obstacle.spinAngle += dt * 2;
           }
           const speedMul = isSlowActive() ? 0.4 : (state.rushMode ? 1.5 : 1);
-          obstacle.z -= obstacle.speed * dt * speedMul;
+          let proximityKick = 1;
+          if (obstacle.z < 0.3) {
+            const t = (0.3 - obstacle.z) / 0.21;
+            proximityKick = 1 + Math.pow(t, 1.5) * 1.7;
+          }
+          obstacle.z -= obstacle.speed * dt * speedMul * proximityKick;
           // 分裂型：z<0.5时分裂
           if (obstacle.type === 'splitter' && obstacle.z < 0.5 && !obstacle.split) {
             obstacle.split = true;
             const clone = { ...obstacle, z: obstacle.z + 0.05, angleBase: obstacle.angleBase + rand(0.2, 0.4), split: true, type: 'normal', cells: [...obstacle.cells] };
             state.obstacles.push(clone);
           }
-          if (obstacle.z < 0.02) {
+          if (obstacle.z < 0.09) {
             state.obstacles.splice(i, 1);
             state.combo += 1;
-            state.score += 50 * state.combo * getScoreMultiplier();
+            const dodgePoints = 120 * state.combo * getScoreMultiplier();
+            state.score += dodgePoints;
             if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+            state.dodgeNotify = { text: '+' + dodgePoints, color: '#00ff88' };
+            state.dodgeNotifyTimer = 0.8;
             audio.playDodge();
             continue;
           }
@@ -1155,9 +1386,12 @@
               }
             }
             if (collided) {
-              if (isShieldActive()) {
+              if (isInvincibleActive()) {
+                // 无敌状态，忽略碰撞
+              } else if (isShieldActive()) {
                 state.activePowerups.shield = 0;
                 for (let k = 0; k < 8; k++) createSpark(state.player.x, state.player.y, '#44d9ff');
+                triggerShake(0.25, 6);
                 if (!state.achievements.includes('shieldSave')) unlockAchievement(ACHIEVEMENTS.find(a => a.id === 'shieldSave'));
               } else {
                 triggerGameOver(obstacle, point);
@@ -1207,6 +1441,7 @@
         lockNoise.textContent = '';
         setMode('locking');
         audio.playCollision();
+        triggerShake(0.45, 14);
         // 碰撞碎裂效果：12个红色碎片
         for (let i = 0; i < 12; i++) {
           createSpark(point.x + rand(-10, 10), point.y + rand(-10, 10), '#ff3355');
@@ -1304,6 +1539,7 @@
       function showReport(taunt) {
         lockOverlay.style.display = 'none';
         reportPanel.style.display = 'flex';
+        emergencyRestartBtn.style.display = 'block';
         reportMeta.textContent = `存活 ${state.surviveLocked.toFixed(1)} 秒`;
         typeReport(`> 存活时长：${state.surviveLocked.toFixed(1)} 秒\n> 主脑裁决：\n${taunt}`);
         state.aiFinalText = taunt;
@@ -1391,9 +1627,32 @@
         state.currentTime += dt * 1000;
         state.elapsed = (state.currentTime - state.startTime) / 1000;
         state.rotation += TUNNEL_ROT_SPEED * dt * (state.rushMode ? 2 : 1);
+
+        // 双击战术零点平滑回归：5 秒内从 gammaOffsetAtReset 线性衰减到 0
+        if (state.gammaOffsetAtReset !== 0) {
+          const sinceReset = state.currentTime / 1000 - state.lastTapResetTime;
+          if (sinceReset >= 0 && sinceReset < 5) {
+            state.gammaOffset = state.gammaOffsetAtReset * (1 - sinceReset / 5);
+          } else {
+            state.gammaOffset = 0;
+            state.gammaOffsetAtReset = 0;
+          }
+        }
+
+        // 倾斜映射：gamma=±45° → 球抵达环顶部；中间线性 4× 放大（gamma=30° → 球转 120°）
+        state.player.targetAngle = Math.PI / 2 - state.tilt * Math.PI;
+
         const delta = Math.atan2(Math.sin(state.player.targetAngle - state.player.angle), Math.cos(state.player.targetAngle - state.player.angle));
         state.player.angle += delta * PLAYER_MOVE_SMOOTH;
         updatePlayerPosition();
+
+        // 光球运动拖尾历史
+        state.playerTrailHistory.push({ x: state.player.x, y: state.player.y });
+        if (state.playerTrailHistory.length > 14) state.playerTrailHistory.shift();
+
+        // 震屏 timer 递减
+        if (state.shake.timer > 0) state.shake.timer -= dt;
+
         updateObstacles(dt);
         updateSparks(dt);
         updateTrails(dt);
@@ -1406,12 +1665,17 @@
           state.rushTimer -= dt;
           if (state.rushTimer <= 0) {
             state.rushMode = false;
+            audio.setRushMode(false);
           }
         }
         // 道具通知更新
         if (state.itemNotifyTimer > 0) {
           state.itemNotifyTimer -= dt;
           if (state.itemNotifyTimer <= 0) state.itemNotify = null;
+        }
+        if (state.dodgeNotifyTimer > 0) {
+          state.dodgeNotifyTimer -= dt;
+          if (state.dodgeNotifyTimer <= 0) state.dodgeNotify = null;
         }
         if (state.showTutorial) {
           state.tutorialTimer -= dt;
@@ -1460,11 +1724,18 @@
       ];
 
       function updatePowerups(dt) {
-        // 生成道具 - 频率约为障碍物的3:7比例
+        // 生成道具 - 频率约为障碍物的4:6比例
         state.powerupSpawnTimer -= dt;
-        if (state.powerupSpawnTimer <= 0 && state.elapsed > 3) {
+        if (state.powerupSpawnTimer <= 0 && state.elapsed > 1) {
           spawnPowerup();
-          state.powerupSpawnTimer = rand(2, 4);
+          state.powerupSpawnTimer = rand(0.75, 1.5);
+        }
+
+        // 金色星星独立生成 (3-5秒)
+        state.starSpawnTimer -= dt;
+        if (state.starSpawnTimer <= 0 && state.elapsed > 1) {
+          spawnSpecificPowerup('speedBoost');
+          state.starSpawnTimer = rand(3, 5);
         }
 
         // 更新道具位置
@@ -1476,11 +1747,11 @@
             continue;
           }
           // 碰撞检测
-          if (p.z < 0.25 && p.z > 0.05) {
+          if (p.z < 0.35 && p.z > 0.03) {
             const point = getPowerupScreenPoint(p);
             const dx = point.x - state.player.x;
             const dy = point.y - state.player.y;
-            const hitRadius = state.player.radius * 1.5 + 15;
+            const hitRadius = state.player.radius * 2.5 + 25;
             if (dx * dx + dy * dy < hitRadius * hitRadius) {
               activatePowerup(p);
               state.powerups.splice(i, 1);
@@ -1497,16 +1768,26 @@
       }
 
       function spawnPowerup() {
-        const typeInfo = pick(POWERUP_TYPES);
+        const normalTypes = POWERUP_TYPES.filter(t => t.type !== 'speedBoost');
+        const typeInfo = pick(normalTypes);
         const travelTime = rand(3, 5);
         state.powerups.push({
+          ...typeInfo,
           z: 1,
           speed: 1 / travelTime,
           angleBase: rand(0, TAU),
-          type: typeInfo.type,
-          color: typeInfo.color,
-          symbol: typeInfo.symbol,
-          duration: typeInfo.duration,
+          pulse: 0
+        });
+      }
+
+      function spawnSpecificPowerup(type) {
+        const typeInfo = POWERUP_TYPES.find(t => t.type === type) || POWERUP_TYPES[0];
+        const travelTime = rand(3, 5);
+        state.powerups.push({
+          ...typeInfo,
+          z: 1,
+          speed: 1 / travelTime,
+          angleBase: rand(0, TAU),
           pulse: 0
         });
       }
@@ -1522,27 +1803,35 @@
       }
 
       function activatePowerup(p) {
+        state.activePowerups.invincible = 0.5;
+        const pickupBase = { shield: 250, slow: 200, doubleScore: 300, speedBoost: 150 };
+        const pts = Math.floor((pickupBase[p.type] || 200) * getScoreMultiplier());
+        state.score += pts;
         if (p.type === 'speedBoost') {
           state.speedBoostCount++;
-          state.itemNotify = { text: `已获得加速道具 (${state.speedBoostCount}/5)`, color: p.color };
+          state.itemNotify = { text: `加速道具 ${state.speedBoostCount}/5 +${pts}`, color: p.color };
           state.itemNotifyTimer = 1.5;
           if (state.speedBoostCount >= 5) {
             triggerRushMode();
           }
         } else {
           state.activePowerups[p.type] = p.duration;
-          state.itemNotify = { text: `已获得${p.name}`, color: p.color };
+          state.itemNotify = { text: `已获得${p.name} +${pts}`, color: p.color };
           state.itemNotifyTimer = 1.5;
         }
-        audio.playUIClick();
+        audio.playPowerupPickup(p.type);
       }
 
       function triggerRushMode() {
         state.rushMode = true;
         state.rushTimer = 10;
         state.speedBoostCount = 0;
-        state.itemNotify = { text: 'RUSH MODE!', color: '#ffd700' };
+        const rushBonus = Math.floor(1500 * getScoreMultiplier());
+        state.score += rushBonus;
+        state.itemNotify = { text: `刺激模式启动！ +${rushBonus}`, color: '#ffd700' };
         state.itemNotifyTimer = 2;
+        audio.setRushMode(true);
+        triggerShake(0.22, 5);
         // 刺激模式得分x3
       }
 
@@ -1556,6 +1845,10 @@
 
       function isSlowActive() {
         return state.activePowerups.slow > 0;
+      }
+
+      function isInvincibleActive() {
+        return state.activePowerups.invincible > 0;
       }
 
       function getScoreMultiplier() {
@@ -1604,7 +1897,7 @@
 
       function updateScore(dt) {
         const difficulty = clamp(state.elapsed / 60, 0.5, 2);
-        state.score += Math.floor(dt * 10 * difficulty * getScoreMultiplier());
+        state.score += Math.floor(dt * 18 * difficulty * getScoreMultiplier());
       }
 
       function getZoneBlend() {
@@ -1629,6 +1922,16 @@
         const inner = state.innerRadius;
         const zone = getZoneBlend();
         state.activeZoneIndex = zone.index;
+
+        // 震屏：translate canvas
+        if (state.shake.timer > 0) {
+          const ratio = state.shake.timer / state.shake.maxTimer;
+          const dx = (Math.random() - 0.5) * state.shake.mag * ratio;
+          const dy = (Math.random() - 0.5) * state.shake.mag * ratio;
+          ctx.setTransform(state.dpr, 0, 0, state.dpr, dx * state.dpr, dy * state.dpr);
+        } else {
+          ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        }
 
         ctx.clearRect(0, 0, state.w, state.h);
         ctx.fillStyle = mixColor(zone.current.main, zone.future.main, zone.t, 1);
@@ -1793,11 +2096,26 @@
 
       function drawPlayer() {
         ctx.save();
-        const pulse = 1 + Math.sin(state.currentTime * 0.012) * 0.08;
+
+        // 运动拖尾
+        const trailColor = state.rushMode ? '255, 215, 0' : '120, 240, 255';
+        for (let i = 0; i < state.playerTrailHistory.length; i++) {
+          const p = state.playerTrailHistory[i];
+          const t = i / state.playerTrailHistory.length;
+          ctx.fillStyle = `rgba(${trailColor}, ${t * 0.32})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, state.player.radius * (0.45 + t * 0.55), 0, TAU);
+          ctx.fill();
+        }
+
+        const pulseRate = state.rushMode ? 0.022 : 0.012;
+        const pulse = 1 + Math.sin(state.currentTime * pulseRate) * 0.08;
         const glow = 22 + Math.sin(state.currentTime * 0.008) * 4;
-        ctx.fillStyle = '#78f0ff';
-        ctx.shadowColor = 'rgba(120, 240, 255, 0.9)';
-        ctx.shadowBlur = Math.min(14, glow);
+        const playerColor = state.rushMode ? '#ffd700' : '#78f0ff';
+        const playerShadow = state.rushMode ? 'rgba(255, 215, 0, 0.95)' : 'rgba(120, 240, 255, 0.9)';
+        ctx.fillStyle = playerColor;
+        ctx.shadowColor = playerShadow;
+        ctx.shadowBlur = state.rushMode ? 28 : Math.min(14, glow);
         ctx.beginPath();
         ctx.arc(state.player.x, state.player.y, state.player.radius * pulse, 0, TAU);
         ctx.fill();
@@ -1813,6 +2131,19 @@
         ctx.beginPath();
         ctx.arc(state.player.x, state.player.y, state.player.radius * 1.6, 0, TAU);
         ctx.stroke();
+
+        if (isInvincibleActive()) {
+          const invPulse = 0.5 + Math.sin(state.currentTime * 0.02) * 0.5;
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + invPulse * 0.6})`;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+          ctx.shadowBlur = 16;
+          ctx.beginPath();
+          ctx.arc(state.player.x, state.player.y, state.player.radius * (2 + invPulse * 0.5), 0, TAU);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+
         ctx.restore();
       }
 
@@ -1956,6 +2287,12 @@
 
         drawSparks();
 
+        // 极限方向救命提示
+        drawEscapeHint();
+
+        // RUSH 全屏特效
+        if (state.rushMode) drawRushOverlay();
+
         // 区域切换闪光
         if (state.flashAlpha > 0) {
           ctx.fillStyle = `rgba(255, 255, 255, ${state.flashAlpha})`;
@@ -2023,6 +2360,41 @@
           ctx.fillText(state.itemNotify.text, state.w * 0.5, state.h * 0.35 - yOffset);
           ctx.restore();
         }
+
+        // 双击战术冷却 / 就绪 指示（与 itemNotify 同区域，略下方）
+        if (state.mode === 'running') {
+          const nowSec = state.currentTime / 1000;
+          const remain = Math.max(0, 5 - (nowSec - state.lastTapResetTime));
+          const ready = remain <= 0;
+          const label = ready ? '技能充能完毕' : `技能冷却 ${remain.toFixed(1)}s`;
+          const color = ready ? '#ffd700' : '#ff9696';
+          // 仅当无 itemNotify 时显示完整；有 itemNotify 时仍保留但更低更小，避免遮挡
+          const hasNotify = state.itemNotify && state.itemNotifyTimer > 0;
+          ctx.save();
+          ctx.globalAlpha = hasNotify ? 0.55 : 0.9;
+          ctx.fillStyle = color;
+          ctx.font = hasNotify ? '13px sans-serif' : 'bold 15px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 8;
+          ctx.fillText(label, state.w * 0.5, state.h * 0.42);
+          ctx.restore();
+        }
+
+        // 躲避得分通知
+        if (state.dodgeNotify && state.dodgeNotifyTimer > 0) {
+          const alpha = Math.min(1, state.dodgeNotifyTimer * 1.5);
+          const yOffset = (0.8 - state.dodgeNotifyTimer) * 30;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = state.dodgeNotify.color;
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.shadowColor = state.dodgeNotify.color;
+          ctx.shadowBlur = 8;
+          ctx.fillText(state.dodgeNotify.text, state.w * 0.5, state.h * 0.45 - yOffset);
+          ctx.restore();
+        }
       }
 
       function drawTrails() {
@@ -2065,18 +2437,82 @@
         if (state.mode !== 'running') return;
         let maxDanger = 0;
         for (const obs of state.obstacles) {
-          if (obs.z < 0.3 && obs.z > 0.02) {
+          if (obs.z < 0.3 && obs.z > 0.09) {
             const danger = 1 - obs.z / 0.3;
             if (danger > maxDanger) maxDanger = danger;
           }
         }
         if (maxDanger <= 0) return;
-        const alpha = maxDanger * 0.3;
+        const pulse = 0.4 + 0.2 * Math.sin(state.currentTime * 0.012);
+        const alpha = maxDanger * pulse * 0.92;
         const gradient = ctx.createRadialGradient(state.cx, state.cy, state.outerRadius * 0.5, state.cx, state.cy, state.outerRadius * 1.2);
         gradient.addColorStop(0, 'rgba(255, 0, 0, 0)');
         gradient.addColorStop(1, `rgba(255, 0, 0, ${alpha})`);
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, state.w, state.h);
+
+        // 极近距离时在玩家位置画预警环
+        if (maxDanger > 0.7) {
+          const ringPulse = Math.sin(state.currentTime * 0.02);
+          ctx.beginPath();
+          ctx.arc(state.player.x, state.player.y, state.player.radius * (2.4 + ringPulse * 0.3), 0, TAU);
+          ctx.strokeStyle = `rgba(255, 60, 80, ${0.6 + 0.4 * ringPulse})`;
+          ctx.lineWidth = 2.4;
+          ctx.stroke();
+        }
+      }
+
+      function drawEscapeHint() {
+        if (state.mode !== 'running') return;
+        if (Math.abs(state.tilt) < 0.85) return;
+        let mostUrgent = null;
+        for (const obs of state.obstacles) {
+          if (obs.z > 0.3 || obs.z < 0.09) continue;
+          const obsAng = getObstacleAngle(obs);
+          const d = Math.atan2(Math.sin(obsAng - state.player.angle), Math.cos(obsAng - state.player.angle));
+          if (Math.abs(d) < 0.45) {
+            if (!mostUrgent || obs.z < mostUrgent.z) {
+              mostUrgent = { z: obs.z, urgency: 1 - obs.z / 0.3, direction: d > 0 ? 'right' : 'left' };
+            }
+          }
+        }
+        if (!mostUrgent) return;
+        const blink = 0.6 + 0.4 * Math.sin(state.currentTime * 0.025);
+        const size = 22 + mostUrgent.urgency * 14;
+        const text = mostUrgent.direction === 'right' ? '⚠ 立刻向右倾斜 ⚠' : '⚠ 立刻向左倾斜 ⚠';
+        ctx.save();
+        ctx.font = `bold ${Math.floor(size)}px -apple-system, "PingFang SC", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = `rgba(255, 60, 80, ${blink})`;
+        ctx.shadowColor = 'rgba(255, 0, 0, 0.9)';
+        ctx.shadowBlur = 20;
+        const y = (state.h * 0.18) | 0;
+        ctx.fillText(text, state.cx, y);
+        ctx.restore();
+      }
+
+      function drawRushOverlay() {
+        // 横向扫描线
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.06)';
+        for (let y = 0; y < state.h; y += 6) {
+          ctx.fillRect(0, y, state.w, 1);
+        }
+
+        // 顶部红色 + 底部蓝色 色差
+        const topGrad = ctx.createLinearGradient(0, 0, 0, state.h * 0.3);
+        topGrad.addColorStop(0, 'rgba(255, 30, 60, 0.2)');
+        topGrad.addColorStop(1, 'rgba(255, 30, 60, 0)');
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(0, 0, state.w, state.h * 0.3);
+
+        const botGrad = ctx.createLinearGradient(0, state.h * 0.7, 0, state.h);
+        botGrad.addColorStop(0, 'rgba(60, 160, 255, 0)');
+        botGrad.addColorStop(1, 'rgba(60, 160, 255, 0.2)');
+        ctx.fillStyle = botGrad;
+        ctx.fillRect(0, state.h * 0.7, state.w, state.h * 0.3);
+        ctx.restore();
       }
 
       function animateLockNoiseIfNeeded() {
@@ -2130,10 +2566,13 @@
       }
 
       function restartGame() {
+        audio.init();
+        if (audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume().catch(() => {});
         audio.playUIClick();
         resetState();
         reportPanel.style.display = 'none';
         lockOverlay.style.display = 'none';
+        emergencyRestartBtn.style.display = 'none';
         startOverlay.classList.remove('hidden');
         sensorStatus.textContent = '等待授权陀螺仪';
       }
@@ -2149,11 +2588,73 @@
       }, { passive: false });
       window.addEventListener('keydown', (e) => { if (e.key === 'Escape') togglePause(); });
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden && state.mode === 'running' && !state.paused) togglePause();
+        if (document.hidden) {
+          audio.suspendAll();
+          if (state.mode === 'running' && !state.paused) togglePause();
+        } else {
+          audio.resumeAll();
+        }
+      });
+      window.addEventListener('pagehide', () => audio.suspendAll());
+
+      // 双击屏幕战术重置
+      let lastTapTime = 0;
+      function performTacticalReset() {
+        const nowSec = performance.now() / 1000;
+        if (nowSec - state.lastTapResetTime < 5) {
+          state.itemNotify = { text: '重置冷却中', color: '#ff8888' };
+          state.itemNotifyTimer = 0.8;
+          if (audio.initialized) audio.playCollision();
+          return;
+        }
+        // 把近距离威胁推回远端
+        for (const obs of state.obstacles) {
+          if (obs.z < 0.45) {
+            obs.z = 0.7 + Math.random() * 0.1;
+          }
+        }
+        state.gammaOffset = state.gamma;
+        state.gammaOffsetAtReset = state.gamma;
+        state.activePowerups.invincible = Math.max(state.activePowerups.invincible, 0.8);
+        state.flashAlpha = Math.max(state.flashAlpha, 0.4);
+        triggerShake(0.15, 4);
+        state.itemNotify = { text: '战术重置', color: '#ffd700' };
+        state.itemNotifyTimer = 0.8;
+        if (audio.initialized) audio.playPowerupPickup('speedBoost');
+        state.lastTapResetTime = nowSec;
+      }
+      function handleTap() {
+        const now = performance.now();
+        if (now - lastTapTime < 320) {
+          performTacticalReset();
+          lastTapTime = 0;
+        } else {
+          lastTapTime = now;
+        }
+      }
+      canvas.addEventListener('touchstart', () => {
+        if (state.mode === 'running' && !state.paused) handleTap();
+      }, { passive: true });
+      canvas.addEventListener('mousedown', () => {
+        if (state.mode === 'running' && !state.paused) handleTap();
       });
       pauseOverlay.addEventListener('click', togglePause);
-      restartBtn.addEventListener('click', restartGame);
+      emergencyRestartBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        restartGame();
+      });
       startBtn.addEventListener('click', onStartPressed);
+
+      // 全局音频兜底：任何触摸/点击都尝试激活 AudioContext
+      function ensureAudio() {
+        if (!audio.initialized) {
+          audio.init();
+        } else if (audio.ctx && audio.ctx.state === 'suspended' && !audio.muted) {
+          audio.ctx.resume().catch(() => {});
+        }
+      }
+      document.addEventListener('touchstart', ensureAudio, { passive: true });
+      document.addEventListener('pointerdown', ensureAudio, { passive: true });
 
       resize();
       try { state.highScore = parseInt(localStorage.getItem('cyber_highscore')) || 0; } catch (e) {}
