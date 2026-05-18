@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#120d17" />
   <title>光球潜入：突破防火墙</title>
   <style>
     :root {
@@ -18,6 +18,8 @@
       --panel-strong: rgba(3, 8, 10, 0.92);
       --line: rgba(0, 255, 136, 0.2);
       --text: #dafde8;
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     html, body {
@@ -338,6 +340,608 @@
       50% { opacity: 1; text-shadow: 0 0 12px rgba(255, 51, 85, 0.6); }
     }
 
+    .start-overlay {
+      isolation: isolate;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: max(18px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+      background:
+        radial-gradient(circle at 82% 18%, oklch(58% 0.14 28 / 0.2), transparent 28%),
+        radial-gradient(circle at 18% 78%, oklch(62% 0.1 255 / 0.16), transparent 26%),
+        linear-gradient(145deg, oklch(10% 0.018 318), oklch(7% 0.015 286) 48%, oklch(13% 0.035 24));
+      overflow-y: auto;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .start-overlay::before,
+    .start-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .start-overlay::before {
+      background:
+        linear-gradient(115deg, transparent 0 22%, oklch(92% 0.07 86 / 0.05) 22.2% 22.45%, transparent 22.7% 100%),
+        repeating-linear-gradient(90deg, oklch(88% 0.04 72 / 0.035) 0 1px, transparent 1px 84px),
+        repeating-linear-gradient(0deg, oklch(88% 0.04 72 / 0.024) 0 1px, transparent 1px 72px);
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+
+    .start-overlay::after {
+      opacity: 0.42;
+      background-image:
+        radial-gradient(circle at 24% 24%, oklch(88% 0.08 83 / 0.22) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 74% 66%, oklch(72% 0.12 28 / 0.18) 0 1px, transparent 1.5px);
+      background-size: 74px 74px, 112px 112px;
+      mix-blend-mode: screen;
+      animation: starDrift 14s var(--ease-out-expo) infinite alternate;
+    }
+
+    .gallery-shell {
+      width: min(1180px, 100%);
+      min-height: min(820px, 100%);
+      margin: auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(280px, 0.74fr);
+      gap: clamp(18px, 4vw, 56px);
+      align-items: center;
+    }
+
+    .gallery-hero {
+      position: relative;
+      min-height: min(70vh, 680px);
+      display: grid;
+      align-content: center;
+      gap: clamp(18px, 3vw, 36px);
+      padding: clamp(12px, 2vw, 32px);
+    }
+
+    .gallery-hero::before {
+      content: "";
+      position: absolute;
+      width: min(58vw, 620px);
+      aspect-ratio: 1;
+      right: -14%;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, oklch(96% 0.07 92 / 0.95) 0 2px, transparent 3px 4%),
+        radial-gradient(circle at 50% 50%, transparent 0 22%, oklch(78% 0.09 77 / 0.16) 22.5% 23%, transparent 23.5% 37%, oklch(74% 0.16 30 / 0.18) 37.5% 38%, transparent 38.5% 100%),
+        radial-gradient(circle, oklch(74% 0.14 31 / 0.22), transparent 60%);
+      box-shadow: 0 0 80px oklch(75% 0.13 35 / 0.14), inset 0 0 70px oklch(96% 0.08 88 / 0.08);
+      filter: blur(0.2px);
+      opacity: 0.86;
+      animation: orbBreathe 6s var(--ease-out-expo) infinite alternate;
+      pointer-events: none;
+    }
+
+    .gallery-kicker {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid oklch(76% 0.09 76 / 0.24);
+      border-radius: 999px;
+      color: oklch(86% 0.08 78);
+      background: oklch(20% 0.035 312 / 0.58);
+      font: 700 0.72rem/1 "Avenir Next", "Gill Sans", "PingFang SC", sans-serif;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      animation: riseIn 640ms var(--ease-out-expo) both;
+    }
+
+    .gallery-kicker::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: oklch(82% 0.13 78);
+      box-shadow: 0 0 18px oklch(82% 0.13 78 / 0.7);
+    }
+
+    .gallery-title {
+      position: relative;
+      z-index: 1;
+      max-width: 9.4em;
+      margin: 0;
+      color: oklch(94% 0.027 86);
+      font-family: "Songti SC", STSong, "Noto Serif CJK SC", serif;
+      font-size: clamp(3.1rem, 11vw, 8.8rem);
+      font-weight: 700;
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+      text-wrap: balance;
+      text-shadow: 0 22px 70px oklch(0% 0 0 / 0.56), 0 0 34px oklch(86% 0.08 80 / 0.16);
+      animation: riseIn 760ms var(--ease-out-expo) 90ms both;
+    }
+
+    .gallery-lede {
+      position: relative;
+      z-index: 1;
+      max-width: 56ch;
+      margin: 0;
+      color: oklch(82% 0.026 82 / 0.86);
+      font-size: clamp(1rem, 1.3vw, 1.22rem);
+      font-weight: 350;
+      line-height: 1.9;
+      animation: riseIn 760ms var(--ease-out-expo) 170ms both;
+    }
+
+    .gallery-marks {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      animation: riseIn 760ms var(--ease-out-expo) 240ms both;
+    }
+
+    .gallery-mark {
+      padding: 8px 11px;
+      border: 1px solid oklch(74% 0.08 76 / 0.2);
+      border-radius: 999px;
+      color: oklch(84% 0.06 78);
+      background: oklch(18% 0.025 304 / 0.62);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+    }
+
+    .start-card {
+      position: relative;
+      width: auto;
+      max-height: calc(100vh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      padding: clamp(18px, 3vw, 30px);
+      border: 1px solid oklch(72% 0.09 76 / 0.24);
+      border-radius: 30px;
+      overflow: auto;
+      background:
+        linear-gradient(150deg, oklch(23% 0.032 316 / 0.88), oklch(13% 0.024 294 / 0.9) 58%, oklch(18% 0.038 28 / 0.86)),
+        radial-gradient(circle at top right, oklch(78% 0.1 76 / 0.14), transparent 38%);
+      box-shadow: 0 34px 90px oklch(0% 0 0 / 0.54), inset 0 1px 0 oklch(96% 0.04 86 / 0.12);
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+      animation: riseIn 700ms var(--ease-out-expo) 260ms both;
+    }
+
+    .start-card::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid oklch(82% 0.08 82 / 0.12);
+      border-radius: 22px;
+      pointer-events: none;
+    }
+
+    .start-section {
+      position: relative;
+      display: grid;
+      gap: 16px;
+    }
+
+    .start-heading {
+      margin: 0;
+      color: oklch(92% 0.034 84);
+      font-family: "Songti SC", STSong, "Noto Serif CJK SC", serif;
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      line-height: 1.12;
+      letter-spacing: -0.04em;
+    }
+
+    .start-copy {
+      margin: 0;
+      color: oklch(79% 0.026 82 / 0.82);
+      font-size: 0.94rem;
+      line-height: 1.85;
+    }
+
+    .ritual-list {
+      display: grid;
+      gap: 12px;
+      margin: 8px 0 2px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .ritual-item {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid oklch(70% 0.07 78 / 0.14);
+      border-radius: 18px;
+      background: oklch(16% 0.025 304 / 0.58);
+    }
+
+    .ritual-index {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      color: oklch(91% 0.07 82);
+      background: oklch(34% 0.07 32 / 0.72);
+      font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 0 0 1px oklch(92% 0.05 84 / 0.12);
+    }
+
+    .ritual-item strong {
+      display: block;
+      color: oklch(91% 0.038 86);
+      font-size: 0.92rem;
+      line-height: 1.35;
+      margin-bottom: 3px;
+    }
+
+    .ritual-item > span:not(.ritual-index) {
+      color: oklch(76% 0.026 82 / 0.78);
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+
+    .control-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .start-card .row {
+      margin-top: 0;
+    }
+
+    .start-card .alias-input {
+      min-height: 50px;
+      border-color: oklch(75% 0.08 76 / 0.24);
+      border-radius: 18px;
+      background: oklch(12% 0.02 300 / 0.72);
+      color: oklch(94% 0.02 86);
+      box-shadow: inset 0 1px 0 oklch(96% 0.04 86 / 0.08);
+    }
+
+    .start-card .alias-input::placeholder {
+      color: oklch(68% 0.02 82 / 0.86);
+    }
+
+    .start-card .alias-input:focus {
+      border-color: oklch(84% 0.12 78 / 0.72);
+      box-shadow: 0 0 0 4px oklch(72% 0.1 76 / 0.12), inset 0 1px 0 oklch(96% 0.04 86 / 0.1);
+    }
+
+    .start-card .btn {
+      min-height: 52px;
+      border-radius: 18px;
+      color: oklch(16% 0.035 42);
+      background: linear-gradient(135deg, oklch(88% 0.08 84), oklch(72% 0.12 54));
+      box-shadow: 0 18px 34px oklch(61% 0.12 50 / 0.22), inset 0 1px 0 oklch(99% 0.02 86 / 0.62);
+      transition: transform 160ms var(--ease-out-quart), box-shadow 220ms var(--ease-out-quart), filter 220ms var(--ease-out-quart);
+    }
+
+    .start-card .btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 24px 42px oklch(61% 0.12 50 / 0.28), inset 0 1px 0 oklch(99% 0.02 86 / 0.7);
+    }
+
+    .start-card .btn:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .sensor-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: oklch(78% 0.032 82 / 0.84);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+    }
+
+    .start-card .status-chip {
+      margin-top: 0;
+      border-color: oklch(76% 0.09 76 / 0.22);
+      color: oklch(86% 0.08 78);
+      background: oklch(18% 0.03 304 / 0.66);
+    }
+
+    .sensitivity-field {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 18px;
+      background: oklch(12% 0.02 300 / 0.58);
+      border: 1px solid oklch(70% 0.07 78 / 0.14);
+      color: oklch(78% 0.03 82 / 0.82);
+      font-size: 0.8rem;
+    }
+
+    .sensitivity-field input {
+      width: 100%;
+      accent-color: oklch(82% 0.12 78);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .btn:focus-visible,
+    .alias-input:focus-visible,
+    .sensitivity-field input:focus-visible,
+    #muteBtn:focus-visible,
+    #emergencyRestartBtn:focus-visible {
+      outline: 3px solid oklch(88% 0.1 82);
+      outline-offset: 4px;
+    }
+
+    .start-overlay {
+      padding: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+      background:
+        radial-gradient(circle at 50% 28%, oklch(62% 0.17 218 / 0.28), transparent 30%),
+        radial-gradient(circle at 78% 9%, oklch(63% 0.25 22 / 0.2), transparent 22%),
+        linear-gradient(180deg, oklch(8% 0.03 242), oklch(5% 0.026 255) 48%, oklch(9% 0.04 292));
+    }
+
+    .start-overlay::before {
+      background:
+        linear-gradient(180deg, oklch(88% 0.14 190 / 0.08) 0 1px, transparent 1px 7px),
+        linear-gradient(90deg, transparent 0 49%, oklch(78% 0.17 190 / 0.16) 49.5% 50%, transparent 50.5% 100%),
+        repeating-linear-gradient(115deg, transparent 0 22px, oklch(80% 0.14 190 / 0.055) 23px 24px, transparent 25px 72px);
+      mask-image: linear-gradient(180deg, black, black);
+    }
+
+    .start-overlay::after {
+      opacity: 0.7;
+      background-image:
+        radial-gradient(circle at 50% 35%, transparent 0 26%, oklch(82% 0.18 192 / 0.24) 26.4% 26.8%, transparent 27.2% 44%, oklch(66% 0.23 24 / 0.18) 44.4% 44.8%, transparent 45.2%),
+        radial-gradient(circle at 18% 75%, oklch(79% 0.17 190 / 0.16) 0 1px, transparent 2px),
+        radial-gradient(circle at 82% 72%, oklch(65% 0.25 24 / 0.16) 0 1px, transparent 2px);
+      background-size: 100% 100%, 54px 54px, 74px 74px;
+      mix-blend-mode: screen;
+    }
+
+    .gallery-shell {
+      width: min(430px, 100%);
+      min-height: 100%;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-content: start;
+      padding: 4px 0 0;
+    }
+
+    .gallery-hero {
+      min-height: 42vh;
+      align-content: end;
+      gap: 12px;
+      padding: 18px 14px 8px;
+      overflow: hidden;
+    }
+
+    .gallery-hero::before {
+      width: min(116vw, 500px);
+      right: 50%;
+      top: 48%;
+      transform: translate(50%, -50%);
+      background:
+        conic-gradient(from 180deg, transparent, oklch(78% 0.2 191 / 0.28), transparent 32%, oklch(70% 0.24 24 / 0.22), transparent 62%, oklch(78% 0.2 191 / 0.24), transparent),
+        radial-gradient(circle, transparent 0 22%, oklch(88% 0.15 190 / 0.22) 22.5% 23%, transparent 23.5% 38%, oklch(64% 0.24 24 / 0.2) 38.5% 39%, transparent 39.5% 100%);
+      box-shadow: 0 0 64px oklch(72% 0.19 192 / 0.2), inset 0 0 44px oklch(75% 0.2 192 / 0.16);
+      opacity: 0.78;
+      animation: orbBreathe 5s var(--ease-out-expo) infinite alternate;
+    }
+
+    .gallery-kicker {
+      border-radius: 10px;
+      border-color: oklch(78% 0.17 190 / 0.36);
+      color: oklch(84% 0.18 190);
+      background: oklch(11% 0.05 246 / 0.72);
+      font-family: "Avenir Next", "PingFang SC", sans-serif;
+      letter-spacing: 0.16em;
+      box-shadow: inset 0 0 0 1px oklch(86% 0.14 190 / 0.08), 0 0 24px oklch(72% 0.19 192 / 0.12);
+    }
+
+    .gallery-title {
+      max-width: 6em;
+      color: oklch(94% 0.08 192);
+      font-family: "Arial Narrow", "Avenir Next Condensed", "PingFang SC", sans-serif;
+      font-size: clamp(3.7rem, 21vw, 5.9rem);
+      font-weight: 900;
+      line-height: 0.82;
+      letter-spacing: -0.1em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px oklch(78% 0.2 192 / 0.42), 0 18px 42px oklch(0% 0 0 / 0.7);
+    }
+
+    .gallery-lede {
+      width: 100%;
+      max-width: none;
+      color: oklch(82% 0.08 194 / 0.88);
+      font-size: 0.95rem;
+      line-height: 1.72;
+    }
+
+    .gallery-marks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      width: 100%;
+      gap: 8px;
+    }
+
+    .gallery-mark {
+      display: grid;
+      place-items: center;
+      min-height: 32px;
+      border-radius: 8px;
+      border-color: oklch(72% 0.18 192 / 0.32);
+      color: oklch(88% 0.14 190);
+      background: oklch(13% 0.054 246 / 0.7);
+      font-size: 0.68rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .start-card {
+      max-height: none;
+      padding: 14px;
+      border-radius: 22px;
+      border-color: oklch(74% 0.18 192 / 0.34);
+      background:
+        linear-gradient(180deg, oklch(14% 0.06 247 / 0.94), oklch(8% 0.048 258 / 0.96)),
+        radial-gradient(circle at top right, oklch(62% 0.24 22 / 0.18), transparent 42%);
+      box-shadow: 0 26px 64px oklch(0% 0 0 / 0.58), inset 0 1px 0 oklch(88% 0.14 190 / 0.14), 0 0 40px oklch(72% 0.19 192 / 0.12);
+    }
+
+    .start-card::before {
+      inset: 8px;
+      border-radius: 16px;
+      border-color: oklch(80% 0.16 190 / 0.12);
+    }
+
+    .start-heading {
+      color: oklch(94% 0.08 192);
+      font-family: "Arial Narrow", "Avenir Next Condensed", "PingFang SC", sans-serif;
+      font-size: clamp(1.35rem, 7vw, 2rem);
+      letter-spacing: -0.05em;
+    }
+
+    .start-copy {
+      color: oklch(78% 0.07 194 / 0.82);
+      font-size: 0.86rem;
+      line-height: 1.68;
+    }
+
+    .ritual-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 2px 0;
+    }
+
+    .ritual-item {
+      grid-template-columns: 1fr;
+      grid-template-rows: 28px 1fr;
+      align-items: start;
+      gap: 8px;
+      min-height: 112px;
+      padding: 10px;
+      border-radius: 14px;
+      border-color: oklch(69% 0.18 192 / 0.22);
+      background: linear-gradient(180deg, oklch(15% 0.06 247 / 0.78), oklch(10% 0.05 258 / 0.74));
+    }
+
+    .ritual-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      color: oklch(92% 0.09 190);
+      background: oklch(30% 0.15 193 / 0.62);
+    }
+
+    .ritual-item strong {
+      display: block;
+      min-height: 1.15rem;
+      color: oklch(92% 0.09 190);
+      font-size: 0.78rem;
+      line-height: 1.15;
+      margin-bottom: 4px;
+    }
+
+    .ritual-item > span:not(.ritual-index) {
+      display: block;
+      color: oklch(76% 0.07 194 / 0.84);
+      font-size: 0.7rem;
+      line-height: 1.45;
+    }
+
+    .start-card .alias-input {
+      min-height: 48px;
+      border-radius: 12px;
+      border-color: oklch(72% 0.18 192 / 0.32);
+      background: oklch(6% 0.04 255 / 0.88);
+      color: oklch(94% 0.06 192);
+    }
+
+    .start-card .btn {
+      width: 100%;
+      min-height: 54px;
+      border-radius: 12px;
+      color: oklch(8% 0.04 245);
+      background: linear-gradient(135deg, oklch(86% 0.19 190), oklch(74% 0.21 171));
+      box-shadow: 0 18px 36px oklch(68% 0.22 190 / 0.26), inset 0 1px 0 oklch(98% 0.05 190 / 0.76);
+    }
+
+    .start-card .status-chip,
+    .sensitivity-field {
+      border-radius: 12px;
+      border-color: oklch(72% 0.18 192 / 0.24);
+      color: oklch(84% 0.12 190);
+      background: oklch(10% 0.048 252 / 0.72);
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes orbBreathe {
+      from { transform: translateY(-50%) scale(0.96) rotate(-4deg); opacity: 0.64; }
+      to { transform: translateY(-50%) scale(1.04) rotate(4deg); opacity: 0.92; }
+    }
+
+    @keyframes starDrift {
+      from { transform: translate3d(-10px, 8px, 0); }
+      to { transform: translate3d(12px, -10px, 0); }
+    }
+
+    @media (max-width: 860px) {
+      .gallery-shell {
+        min-height: 100%;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .gallery-hero {
+        min-height: auto;
+        padding-top: 38px;
+        padding-bottom: 10px;
+      }
+
+      .gallery-hero::before {
+        width: 76vw;
+        right: -28vw;
+        top: 58%;
+      }
+
+      .gallery-title {
+        font-size: clamp(3rem, 18vw, 5.4rem);
+      }
+
+      .gallery-lede {
+        max-width: 34ch;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
     @media (pointer: coarse), (max-width: 768px) {
       .hud,
       #hudRight,
@@ -375,7 +979,7 @@
     <!-- 右上角道具状态 -->
     <div id="hudRight" style="position:absolute; top:16px; right:16px; z-index:4; padding:8px 10px; border:1px solid rgba(0,255,136,0.18); border-radius:12px; background:rgba(0,0,0,0.32); backdrop-filter:blur(8px); font-size:12px; line-height:1.5; min-width:80px;">
       <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
-        <button id="muteBtn" style="background:none; border:1px solid rgba(0,255,136,0.2); border-radius:6px; color:var(--green); font-size:14px; cursor:pointer; padding:1px 6px; line-height:1;">♪</button>
+        <button id="muteBtn" aria-label="静音" aria-pressed="false" style="min-width:44px; min-height:44px; background:none; border:1px solid rgba(0,255,136,0.2); border-radius:12px; color:var(--green); font-size:18px; cursor:pointer; padding:8px; line-height:1;">♪</button>
       </div>
       <div id="hudPowerups"></div>
       <div id="hudRushRow" style="display:none; margin-top:4px;">
@@ -393,56 +997,69 @@
       <span>倍率: <strong id="bottomMul">x1</strong></span>
     </div>
 
-    <div class="overlay" id="startOverlay">
-      <div class="panel">
-        <h1 class="title">光球潜入：突破防火墙</h1>
-        <p class="subtitle">授权陀螺仪后开始潜入。蓝色数据球贴着外围环形轨道移动；隧道会随着存活时间切换不同主题区域。</p>
-
-        <details open style="margin:16px 0; padding:12px; border:1px solid rgba(0,255,136,0.15); border-radius:12px; background:rgba(0,0,0,0.3);">
-          <summary style="color:var(--green); cursor:pointer; font-weight:700; font-size:14px;">📋 玩法说明</summary>
-          <div style="margin-top:10px; font-size:13px; line-height:1.8; color:rgba(218,253,232,0.8);">
-            <div style="margin-bottom:8px;"><strong style="color:#78f0ff;">🎮 操作方式</strong></div>
-            <div>· 手握手机底部，左右轻轻倾斜来控制蓝色数据球（默认灵敏度 0.8x）</div>
-            <div>· 左偏或右偏握持会更舒服；可用下方滑块微调灵敏度（0.6x ~ 1.4x）</div>
-            <div>· <strong style="color:#ffd700;">双击屏幕</strong>释放技能「防火墙干扰」：清空近距离威胁 + 0.8 秒无敌（5 秒冷却）</div>
-
-            <div style="margin:10px 0 8px;"><strong style="color:#78f0ff;">🎯 游戏目标</strong></div>
-            <div>· 躲避从深处逼近的红色方块防火墙</div>
-            <div>· 外围<span style="color:#ff6b86;">红色圆圈</span>是障碍物落点预警，不是障碍物本体</div>
-            <div>· 成功躲避障碍物可获得分数（连击越多分越高）</div>
-            <div>· 存活越久，基础分数越高</div>
-
-            <div style="margin:10px 0 8px;"><strong style="color:#78f0ff;">💡 道具说明</strong></div>
-            <div>· <span style="color:#44d9ff;">蓝色圆圈 S</span> = 护盾（抵挡一次碰撞）</div>
-            <div>· <span style="color:#ffaa00;">橙色圆圈 T</span> = 减速（障碍物变慢）</div>
-            <div>· <span style="color:#ff44aa;">粉色圆圈 2x</span> = 双倍分（得分翻倍）</div>
-            <div>· <span style="color:#ffd700;">金色星星 ★</span> = 加速道具（满5个触发刺激模式）</div>
-            <div>· <span style="color:#fff;">✨ 任意道具</span> = 拾取后附带 0.5 秒无敌</div>
+    <div class="overlay start-overlay" id="startOverlay" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+      <div class="gallery-shell" aria-labelledby="startTitle">
+        <section class="gallery-hero" aria-label="作品展示引导">
+          <div class="gallery-kicker">Firewall tunnel / mobile protocol</div>
+          <h1 class="gallery-title" id="startTitle">光球潜入</h1>
+          <p class="gallery-lede">手机就是控制舱。握住底部，左右倾斜不超过 45°，让蓝色数据探针贴着外围轨道穿过防御缝隙，尽可能接近核心数据库。</p>
+          <div class="gallery-marks" aria-label="作品特征">
+            <span class="gallery-mark">陀螺仪控制</span>
+            <span class="gallery-mark">RUSH 加速</span>
+            <span class="gallery-mark">AI 嘲讽结算</span>
           </div>
-        </details>
+        </section>
 
-        <div class="row" style="margin-bottom:8px;">
-          <input id="aliasInput" class="alias-input" type="text" placeholder="输入黑客代号（可选）" maxlength="20" />
-        </div>
-        <div class="row">
-          <button id="startBtn" class="btn">授权陀螺仪并开始</button>
-        </div>
-        <div class="status-chip"><span class="dot"></span><span id="sensorStatus">等待授权陀螺仪</span></div>
-        <div class="tiny" style="margin-top:14px;">
-          灵敏度 <span id="sensitivityLabel">0.8x</span>
-          <input id="sensitivitySlider" type="range" min="0.6" max="1.4" step="0.1" value="0.8" style="width:100%; accent-color:#00ff66; margin-top:8px;" />
-        </div>
+        <section class="panel start-card" aria-label="开始潜入">
+          <div class="start-section">
+            <h2 class="start-heading">握住手机底部，接入外环轨道。</h2>
+            <p class="start-copy">系统会读取你的倾角。左右倾斜不超过 45°，就能稳定控制光球贴着外环移动。</p>
+
+            <ul class="ritual-list" aria-label="玩法说明">
+              <li class="ritual-item">
+                <span class="ritual-index">01</span>
+                <span><strong>握姿</strong>握住手机底部，左右倾斜不超过 45°。</span>
+              </li>
+              <li class="ritual-item">
+                <span class="ritual-index">02</span>
+                <span><strong>预判</strong>红色小圈是障碍物落点预测，提前闪开。</span>
+              </li>
+              <li class="ritual-item">
+                <span class="ritual-index">03</span>
+                <span><strong>双击技能</strong>清空近距离威胁，并获得 0.8 秒无敌；冷却 5 秒。</span>
+              </li>
+            </ul>
+
+            <div class="control-stack">
+              <div class="row">
+                <label class="sr-only" for="aliasInput">黑客代号</label>
+                <input id="aliasInput" class="alias-input" type="text" placeholder="输入黑客代号（可选）" maxlength="20" autocomplete="nickname" />
+              </div>
+              <div class="row">
+                <button id="startBtn" class="btn">授权陀螺仪并开始</button>
+              </div>
+              <div class="sensor-line">
+                <div class="status-chip"><span class="dot"></span><span id="sensorStatus" aria-live="polite">等待授权陀螺仪</span></div>
+                <span>建议佩戴耳机</span>
+              </div>
+              <label class="sensitivity-field">
+                <span>灵敏度 <strong id="sensitivityLabel">0.8x</strong></span>
+                <input id="sensitivitySlider" type="range" min="0.6" max="1.4" step="0.1" value="0.8" />
+              </label>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
-    <div class="overlay" id="pauseOverlay" style="display:none; z-index:8; background:rgba(0,0,0,0.7); flex-direction:column; gap:12px;">
-      <div style="font-size:clamp(28px,6vw,48px); color:var(--green); letter-spacing:0.15em; text-shadow:0 0 20px rgba(0,255,136,0.3);">PAUSED</div>
+    <div class="overlay" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" style="display:none; z-index:8; background:rgba(0,0,0,0.7); flex-direction:column; gap:12px;">
+      <div id="pauseTitle" style="font-size:clamp(28px,6vw,48px); color:var(--green); letter-spacing:0.15em; text-shadow:0 0 20px rgba(0,255,136,0.3);">PAUSED</div>
       <div style="color:rgba(218,253,232,0.6); font-size:14px;">按 ESC 或点击继续</div>
     </div>
 
-    <div class="overlay lock-overlay" id="lockOverlay">
+    <div class="overlay lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
       <div class="lock-box">
-        <h2>系统已被锁定</h2>
+        <h2 id="lockTitle">系统已被锁定</h2>
         <div class="warn">正在追踪骇客坐标... 防火墙已升至最高等级。</div>
         <div class="noise" id="lockNoise"></div>
         <div class="status-chip" style="margin-top: 14px; color: #ff8ea2; background: rgba(255, 51, 85, 0.08); border-color: rgba(255, 51, 85, 0.2);">
@@ -452,10 +1069,10 @@
       </div>
     </div>
 
-    <div class="overlay report-panel" id="reportPanel">
+    <div class="overlay report-panel" id="reportPanel" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
       <div class="report-box">
-        <h2>AI TRACKING REPORT</h2>
-        <div class="terminal" id="reportText"></div>
+        <h2 id="reportTitle">AI TRACKING REPORT</h2>
+        <div class="terminal" id="reportText" aria-live="polite"></div>
         <div id="scoreBoard" style="margin-top:12px; padding:10px 14px; border-radius:12px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15); font-size:13px; line-height:1.8; color:var(--green);"></div>
         <div class="footer-row">
           <div class="blink-text" id="reportMeta">已完成高维裁决</div>
@@ -580,6 +1197,8 @@
             this.masterGain.gain.setTargetAtTime(this.muted ? 0 : 2.2, this.ctx.currentTime, 0.05);
           }
           muteBtn.textContent = this.muted ? '♪̸' : '♪';
+          muteBtn.setAttribute('aria-label', this.muted ? '取消静音' : '静音');
+          muteBtn.setAttribute('aria-pressed', String(this.muted));
           muteBtn.style.opacity = this.muted ? '0.4' : '1';
         },
 
