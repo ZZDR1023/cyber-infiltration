@@ -690,7 +690,6 @@
       padding: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
       background:
         radial-gradient(circle at 50% 28%, oklch(62% 0.17 218 / 0.28), transparent 30%),
-        radial-gradient(circle at 78% 9%, oklch(63% 0.25 22 / 0.2), transparent 22%),
         linear-gradient(180deg, oklch(8% 0.03 242), oklch(5% 0.026 255) 48%, oklch(9% 0.04 292));
     }
 
@@ -705,9 +704,9 @@
     .start-overlay::after {
       opacity: 0.7;
       background-image:
-        radial-gradient(circle at 50% 35%, transparent 0 26%, oklch(82% 0.18 192 / 0.24) 26.4% 26.8%, transparent 27.2% 44%, oklch(66% 0.23 24 / 0.18) 44.4% 44.8%, transparent 45.2%),
+        radial-gradient(circle at 50% 35%, transparent 0 26%, oklch(82% 0.18 192 / 0.24) 26.4% 26.8%, transparent 27.2% 44%),
         radial-gradient(circle at 18% 75%, oklch(79% 0.17 190 / 0.16) 0 1px, transparent 2px),
-        radial-gradient(circle at 82% 72%, oklch(65% 0.25 24 / 0.16) 0 1px, transparent 2px);
+        radial-gradient(circle at 82% 72%, oklch(79% 0.17 190 / 0.14) 0 1px, transparent 2px);
       background-size: 100% 100%, 54px 54px, 74px 74px;
       mix-blend-mode: screen;
     }
@@ -735,8 +734,8 @@
       top: 48%;
       transform: translate(50%, -50%);
       background:
-        conic-gradient(from 180deg, transparent, oklch(78% 0.2 191 / 0.28), transparent 32%, oklch(70% 0.24 24 / 0.22), transparent 62%, oklch(78% 0.2 191 / 0.24), transparent),
-        radial-gradient(circle, transparent 0 22%, oklch(88% 0.15 190 / 0.22) 22.5% 23%, transparent 23.5% 38%, oklch(64% 0.24 24 / 0.2) 38.5% 39%, transparent 39.5% 100%);
+        conic-gradient(from 180deg, transparent, oklch(78% 0.2 191 / 0.28), transparent 32%, oklch(78% 0.2 191 / 0.2), transparent 62%, oklch(78% 0.2 191 / 0.24), transparent),
+        radial-gradient(circle, transparent 0 22%, oklch(88% 0.15 190 / 0.22) 22.5% 23%, transparent 23.5% 38%, oklch(78% 0.16 190 / 0.18) 38.5% 39%, transparent 39.5% 100%);
       box-shadow: 0 0 64px oklch(72% 0.19 192 / 0.2), inset 0 0 44px oklch(75% 0.2 192 / 0.16);
       opacity: 0.78;
       animation: orbBreathe 5s var(--ease-out-expo) infinite alternate;
@@ -1022,11 +1021,11 @@
               </li>
               <li class="ritual-item">
                 <span class="ritual-index">02</span>
-                <span><strong>预判</strong>红色小圈是障碍物落点预测，提前闪开。</span>
+                <span><strong>道具</strong>S 护盾抵挡一次撞击，T 减速隧道，2x 翻倍得分，★ 集满 5 个进入刺激模式。</span>
               </li>
               <li class="ritual-item">
                 <span class="ritual-index">03</span>
-                <span><strong>双击技能</strong>清空近距离威胁，并获得 0.8 秒无敌；冷却 5 秒。</span>
+                <span><strong>双击技能</strong>清空近距离威胁，并获得 0.8 秒无敌；冷却 10 秒。</span>
               </li>
             </ul>
 
@@ -1486,6 +1485,25 @@
       const ZONE_DURATION = 10;
       const GYRO_WAIT_MS = 1500;
       const MAX_OBSTACLES = 24;
+      const FOV = 300;
+      const TUNNEL_Z_NEAR = 0;
+      const TUNNEL_Z_FAR = 1000;
+      const TUNNEL_Z_STEP = 90;
+      const COLLISION_Z_WINDOW = 90;
+      const TACTICAL_RESET_COOLDOWN = 10;
+      const OBSTACLE_Z_SPEED = 340;
+      const POWERUP_Z_SPEED = 260;
+      const CYBER_COLORS = {
+        void: 'rgb(3, 4, 18)',
+        near: 'rgba(9, 10, 34, 0.98)',
+        cyan: 'rgba(70, 236, 255, 1)',
+        cyanSoft: 'rgba(70, 236, 255, 0.42)',
+        magenta: 'rgba(255, 54, 190, 1)',
+        magentaSoft: 'rgba(255, 54, 190, 0.36)',
+        violet: 'rgba(102, 72, 255, 0.46)',
+        warning: 'rgba(255, 62, 103, 1)',
+        warningSoft: 'rgba(255, 62, 103, 0.44)'
+      };
       const ZONE_STYLES = [
         {
           name: '数据漩涡',
@@ -1605,14 +1623,15 @@
         tilt: 0,
         gammaOffset: 0,
         gammaOffsetAtReset: 0,
-        lastTapResetTime: -10,
+        lastTapResetTime: -TACTICAL_RESET_COOLDOWN,
         score: 0,
         highScore: 0,
         combo: 0,
         maxCombo: 0,
         lastZoneIndex: 0,
         starSpawnTimer: 1.5,
-        paused: false
+        paused: false,
+        tunnelScroll: 0
       };
 
       function clamp(value, min, max) {
@@ -1800,6 +1819,7 @@
         state.surviveLocked = 0;
         state.spawnTimer = 0.55;
         state.spawnInterval = 0.55;
+        state.tunnelScroll = 0;
         state.sessionId += 1;
         window.clearTimeout(state.gyroWaitTimer);
         state.obstacles.length = 0;
@@ -1831,7 +1851,7 @@
         state.tilt = 0;
         state.gammaOffset = 0;
         state.gammaOffsetAtReset = 0;
-        state.lastTapResetTime = -10;
+        state.lastTapResetTime = -TACTICAL_RESET_COOLDOWN;
         state.playerTrailHistory = [];
         state.shake = { timer: 0, maxTimer: 0, mag: 0 };
         state.gamma = 0;
@@ -1879,58 +1899,50 @@
 
       function getDifficultyFactor() {
         const t = state.elapsed;
-        if (t < 10) return 0.1;
-        if (t < 30) return lerp(0.1, 0.25, (t - 10) / 20);
-        if (t < 60) return lerp(0.25, 0.45, (t - 30) / 30);
-        if (t < 120) return lerp(0.45, 0.65, (t - 60) / 60);
-        return lerp(0.65, 0.8, Math.min(1, (t - 120) / 80));
+        if (t < 10) return 0.12;
+        if (t < 30) return lerp(0.12, 0.32, (t - 10) / 20);
+        if (t < 60) return lerp(0.32, 0.62, (t - 30) / 30);
+        if (t < 120) return lerp(0.62, 0.95, (t - 60) / 60);
+        return lerp(0.95, 1.25, Math.min(1, (t - 120) / 80));
+      }
+
+      function getTunnelScrollSpeed() {
+        return 360;
+      }
+
+      function getTunnelSpeedMultiplier() {
+        return isSlowActive() ? 0.4 : (state.rushMode ? 1.5 : 1);
       }
 
       function spawnObstacle() {
         const zone = ZONE_STYLES[state.activeZoneIndex] || ZONE_STYLES[0];
-        const diff = getDifficultyFactor();
-        const baseTravel = lerp(rand(2.35, 3.1), rand(1.05, 1.65), clamp(state.elapsed / 45, 0, 1));
-        const travelTime = baseTravel / diff;
-        const speed = 1 / travelTime;
         const centerThreat = false;
-        const angleAtImpact = rand(0, TAU);
-        const impactRotation = state.rotation + TUNNEL_ROT_SPEED * travelTime;
-        const angleBase = angleAtImpact - impactRotation;
-        const cells = [];
-        const size = Math.min(rand(12, 17) + state.activeZoneIndex * 2.2, state.outerRadius);
-        const cols = (centerThreat ? 4 + state.activeZoneIndex : 3 + state.activeZoneIndex + (Math.random() > 0.45 ? 1 : 0)) | 0;
-        const rows = (centerThreat ? 4 : 2 + (Math.random() > 0.25 ? 1 : 0)) | 0;
-        for (let y = 0; y < rows; y += 1) {
-          for (let x = 0; x < cols; x += 1) {
-            cells.push({
-              x: x - (cols - 1) / 2,
-              y: y - (rows - 1) / 2,
-              glow: Math.random() * 0.5 + 0.5
-            });
-          }
-        }
-        // 障碍物类型：普通、追踪、分裂、旋转
+        const speed = getTunnelScrollSpeed();
+        const metrics = getHoneycombGridMetrics();
+        const row = Math.ceil((TUNNEL_Z_FAR + state.tunnelScroll) / metrics.zStep);
+        const z = row * metrics.zStep - state.tunnelScroll;
+        const column = (Math.random() * metrics.columns) | 0;
+        const cells = [{
+          x: 0,
+          y: 0,
+          glow: Math.random() * 0.5 + 0.5
+        }];
         let type = 'normal';
         const t = state.elapsed;
-        if (t > 60 && Math.random() > 0.7) type = 'tracking';
-        else if (t > 45 && Math.random() > 0.75) type = 'splitter';
-        else if (t > 30 && Math.random() > 0.8) type = 'spinner';
+        if (t > 45 && Math.random() > 0.75) type = 'splitter';
 
         const obstacle = {
-          z: 1,
+          z,
           speed,
-          angleBase,
-          drift: rand(-0.18, 0.18),
-          scale: rand(0.9, 1.28),
-          size,
+          column,
+          row,
           cells,
           flashSeed: Math.random() * 10,
           text: Math.random() > 0.55 ? 'ACCESS DENIED' : 'DANGER',
           zoneName: zone.name,
           centerThreat,
           type,
-          split: false,
-          spinAngle: 0
+          split: false
         };
         state.obstacles.push(obstacle);
         if (state.obstacles.length > MAX_OBSTACLES) {
@@ -1977,33 +1989,14 @@
 
         for (let i = state.obstacles.length - 1; i >= 0; i -= 1) {
           const obstacle = state.obstacles[i];
-          // 追踪型：角度向玩家偏移
-          if (obstacle.type === 'tracking' && obstacle.z > 0.1) {
-            const playerAngle = normalizeAngle(state.player.angle);
-            const obsAngle = normalizeAngle(obstacle.angleBase + state.rotation);
-            let diff2 = playerAngle - obsAngle;
-            if (diff2 > Math.PI) diff2 -= TAU;
-            if (diff2 < -Math.PI) diff2 += TAU;
-            obstacle.angleBase += diff2 * 0.3 * dt;
-          }
-          // 旋转型：cells整体旋转
-          if (obstacle.type === 'spinner') {
-            obstacle.spinAngle += dt * 2;
-          }
-          const speedMul = isSlowActive() ? 0.4 : (state.rushMode ? 1.5 : 1);
-          let proximityKick = 1;
-          if (obstacle.z < 0.3) {
-            const t = (0.3 - obstacle.z) / 0.21;
-            proximityKick = 1 + Math.pow(t, 1.5) * 1.7;
-          }
-          obstacle.z -= obstacle.speed * dt * speedMul * proximityKick;
-          // 分裂型：z<0.5时分裂
-          if (obstacle.type === 'splitter' && obstacle.z < 0.5 && !obstacle.split) {
+          obstacle.z -= obstacle.speed * dt * getTunnelSpeedMultiplier();
+          if (obstacle.type === 'splitter' && obstacle.z < 520 && !obstacle.split) {
             obstacle.split = true;
-            const clone = { ...obstacle, z: obstacle.z + 0.05, angleBase: obstacle.angleBase + rand(0.2, 0.4), split: true, type: 'normal', cells: [...obstacle.cells] };
+            const cloneRow = obstacle.row + 1;
+            const clone = { ...obstacle, z: cloneRow * getHoneycombGridMetrics().zStep - state.tunnelScroll, row: cloneRow, split: true, type: 'normal', cells: [...obstacle.cells] };
             state.obstacles.push(clone);
           }
-          if (obstacle.z < 0.09) {
+          if (obstacle.z < -COLLISION_Z_WINDOW) {
             state.obstacles.splice(i, 1);
             state.combo += 1;
             const dodgePoints = 120 * state.combo * getScoreMultiplier();
@@ -2015,63 +2008,116 @@
             continue;
           }
 
-          if (obstacle.z < 0.2 && obstacle.z > 0.04) {
-            const point = getObstacleScreenPoint(obstacle);
-            let collided = false;
-            const rot = point.angle + Math.PI / 2;
-            const cos = Math.cos(rot);
-            const sin = Math.sin(rot);
-            for (const cell of obstacle.cells) {
-              const localX = cell.x * obstacle.size * point.scale * 0.96;
-              const localY = cell.y * obstacle.size * point.scale * 1.12;
-              const cellX = point.x + localX * cos - localY * sin;
-              const cellY = point.y + localX * sin + localY * cos;
-              const dx = cellX - state.player.x;
-              const dy = cellY - state.player.y;
-              const hitRadius = state.player.radius * 0.42 + obstacle.size * point.scale * 0.18;
-              if (dx * dx + dy * dy < hitRadius * hitRadius) {
-                collided = true;
-                break;
-              }
+          if (obstacleTouchesPlayer(obstacle)) {
+            if (isInvincibleActive()) {
+              continue;
             }
-            if (collided) {
-              if (isInvincibleActive()) {
-                // 无敌状态，忽略碰撞
-              } else if (isShieldActive()) {
-                state.activePowerups.shield = 0;
-                for (let k = 0; k < 8; k++) createSpark(state.player.x, state.player.y, '#44d9ff');
-                triggerShake(0.25, 6);
-                if (!state.achievements.includes('shieldSave')) unlockAchievement(ACHIEVEMENTS.find(a => a.id === 'shieldSave'));
-              } else {
-                triggerGameOver(obstacle, point);
-                break;
-              }
+            if (isShieldActive()) {
+              state.activePowerups.shield = 0;
+              for (let k = 0; k < 8; k++) createSpark(state.player.x, state.player.y, '#44d9ff');
+              triggerShake(0.25, 6);
+              state.obstacles.splice(i, 1);
+              if (!state.achievements.includes('shieldSave')) unlockAchievement(ACHIEVEMENTS.find(a => a.id === 'shieldSave'));
+              continue;
             }
+            triggerGameOver(obstacle, getObstacleScreenPoint(obstacle));
+            break;
           }
         }
       }
 
+      function getEntityColumnAngle(column) {
+        const columns = getHoneycombColumns();
+        return (column % columns) * (Math.PI * 2 / columns) + state.rotation;
+      }
+
+      function getCellColumn(column, row) {
+        const columns = getHoneycombColumns();
+        return (column + (row % 2) * 0.5 + columns) % columns;
+      }
+
+      function getZGridRow(z) {
+        return Math.round((z + state.tunnelScroll) / getHoneycombGridMetrics().zStep);
+      }
+
+      function getAngleCellColumn(angle, z) {
+        const columns = getHoneycombColumns();
+        const row = getZGridRow(z);
+        const offset = (row % 2) * 0.5;
+        const rawColumn = normalizeAngle(angle - state.rotation) / (TAU / columns);
+        return (Math.round(rawColumn - offset) + offset + columns) % columns;
+      }
+
       function getObstacleAngle(obstacle) {
-        const depth = clamp(1 - obstacle.z, 0, 1);
-        return obstacle.angleBase + state.rotation + obstacle.drift * depth;
+        return getEntityColumnAngle(getCellColumn(obstacle.column, obstacle.row));
+      }
+
+      function getObstacleCellPoint(obstacle, cell) {
+        const metrics = getHoneycombGridMetrics();
+        const row = obstacle.row + cell.y;
+        const z = Math.max(0, obstacle.z + cell.y * metrics.zStep);
+        const column = getCellColumn(obstacle.column + cell.x, row);
+        const angle = getHoneycombColumnAngle(column);
+        const point = projectTunnelPoint(angle, z, metrics.tunnelRadius);
+        return {
+          ...point,
+          angle,
+          hitRadius: Math.max(6, metrics.zRadius * 0.72 * point.scale)
+        };
+      }
+
+      function getPlayerHoneycombColumn() {
+        return getAngleCellColumn(state.player.angle, getPlayerTunnelZ());
+      }
+
+      function getPlayerTunnelZ() {
+        const playerRadius = state.outerRadius * 0.86;
+        const tunnelRadius = getTunnelRadius();
+        const scale = clamp(playerRadius / tunnelRadius, 0.01, 1);
+        return Math.max(0, (FOV / scale) - FOV);
+      }
+
+      function getPlayerCollisionWindow() {
+        return getHoneycombGridMetrics().zRadius * 1.25;
+      }
+
+      function columnsOverlap(a, b) {
+        const columns = getHoneycombColumns();
+        const diff = Math.abs((((a - b) % columns) + columns) % columns);
+        return Math.min(diff, columns - diff) <= 0.5;
+      }
+
+      function obstacleTouchesPlayer(obstacle) {
+        const playerColumn = getPlayerHoneycombColumn();
+        const playerZ = getPlayerTunnelZ();
+        const zWindow = getPlayerCollisionWindow();
+        for (const cell of obstacle.cells) {
+          const row = obstacle.row + cell.y;
+          const z = obstacle.z + cell.y * getHoneycombGridMetrics().zStep;
+          if (Math.abs(z - playerZ) > zWindow) continue;
+          const cellColumn = getCellColumn(obstacle.column + cell.x, row);
+          if (columnsOverlap(playerColumn, cellColumn)) return true;
+        }
+        return false;
       }
 
       function getObstacleScreenPoint(obstacle) {
-        const depth = clamp(1 - obstacle.z, 0, 1);
+        const z = Math.max(0, obstacle.z);
+        const depth = clamp((TUNNEL_Z_FAR - z) / TUNNEL_Z_FAR, 0, 1);
         const angle = getObstacleAngle(obstacle);
-        const eased = Math.pow(depth, 1.08);
-        const laneRadius = state.outerRadius * 0.9;
-        const radius = state.outerRadius * (0.02 + Math.pow(eased, 1.45) * 0.98);
-        const perspectiveScale = 0.08 + Math.pow(eased, 2.25) * 1.5;
-        const x = Math.floor(state.cx + Math.cos(angle) * radius);
-        const y = Math.floor(state.cy + Math.sin(angle) * radius * state.tunnelScaleY);
+        const metrics = getHoneycombGridMetrics();
+        const scale = FOV / (FOV + z);
+        const radius = metrics.tunnelRadius * scale;
         return {
-          x,
-          y,
+          x: Math.floor(state.cx + Math.cos(angle) * radius),
+          y: Math.floor(state.cy + Math.sin(angle) * radius * state.tunnelScaleY),
           angle,
-          scale: perspectiveScale,
+          scale,
           depth,
-          radius
+          radius,
+          z,
+          hitRadius: Math.max(6, metrics.zRadius * 0.72 * scale),
+          projection: scale
         };
       }
 
@@ -2278,6 +2324,7 @@
         state.currentTime += dt * 1000;
         state.elapsed = (state.currentTime - state.startTime) / 1000;
         state.rotation += TUNNEL_ROT_SPEED * dt * (state.rushMode ? 2 : 1);
+        state.tunnelScroll += getTunnelScrollSpeed() * getTunnelSpeedMultiplier() * dt;
 
         // 倾斜映射：gamma=±45° → 球抵达环顶部；中间线性 4× 放大（gamma=30° → 球转 120°）
         state.player.targetAngle = Math.PI / 2 - state.tilt * Math.PI;
@@ -2361,10 +2408,10 @@
 
       // 道具系统
       const POWERUP_TYPES = [
-        { type: 'shield', color: '#44d9ff', symbol: 'S', duration: 6, name: '护盾' },
-        { type: 'slow', color: '#ffaa00', symbol: 'T', duration: 3, name: '减速' },
-        { type: 'doubleScore', color: '#ff44aa', symbol: '2x', duration: 5, name: '双倍分' },
-        { type: 'speedBoost', color: '#ffd700', symbol: '★', duration: 0, name: '加速道具' }
+        { type: 'shield', color: '#44d9ff', symbol: 'S', duration: 6, name: '护盾', weight: 4 },
+        { type: 'slow', color: '#ffaa00', symbol: 'T', duration: 3, name: '减速', weight: 1 },
+        { type: 'doubleScore', color: '#ff44aa', symbol: '2x', duration: 5, name: '双倍分', weight: 4 },
+        { type: 'speedBoost', color: '#ffd700', symbol: '★', duration: 0, name: '加速道具', weight: 0 }
       ];
 
       function updatePowerups(dt) {
@@ -2385,21 +2432,14 @@
         // 更新道具位置
         for (let i = state.powerups.length - 1; i >= 0; i--) {
           const p = state.powerups[i];
-          p.z -= p.speed * dt;
-          if (p.z < 0.02) {
+          p.z -= p.speed * dt * getTunnelSpeedMultiplier();
+          if (p.z < -COLLISION_Z_WINDOW) {
             state.powerups.splice(i, 1);
             continue;
           }
-          // 碰撞检测
-          if (p.z < 0.35 && p.z > 0.03) {
-            const point = getPowerupScreenPoint(p);
-            const dx = point.x - state.player.x;
-            const dy = point.y - state.player.y;
-            const hitRadius = state.player.radius * 2.5 + 25;
-            if (dx * dx + dy * dy < hitRadius * hitRadius) {
-              activatePowerup(p);
-              state.powerups.splice(i, 1);
-            }
+          if (Math.abs(p.z - getPlayerTunnelZ()) <= getPlayerCollisionWindow() && columnsOverlap(getPlayerHoneycombColumn(), p.column)) {
+            activatePowerup(p);
+            state.powerups.splice(i, 1);
           }
         }
 
@@ -2411,39 +2451,55 @@
         }
       }
 
+      function pickWeightedPowerup(types) {
+        const total = types.reduce((sum, type) => sum + type.weight, 0);
+        let roll = Math.random() * total;
+        for (const type of types) {
+          roll -= type.weight;
+          if (roll <= 0) return type;
+        }
+        return types[types.length - 1];
+      }
+
       function spawnPowerup() {
         const normalTypes = POWERUP_TYPES.filter(t => t.type !== 'speedBoost');
-        const typeInfo = pick(normalTypes);
-        const travelTime = rand(3, 5);
+        const typeInfo = pickWeightedPowerup(normalTypes);
         state.powerups.push({
           ...typeInfo,
-          z: 1,
-          speed: 1 / travelTime,
-          angleBase: rand(0, TAU),
+          z: TUNNEL_Z_FAR,
+          speed: getTunnelScrollSpeed(),
+          column: (Math.random() * getHoneycombColumns()) | 0,
           pulse: 0
         });
       }
 
       function spawnSpecificPowerup(type) {
         const typeInfo = POWERUP_TYPES.find(t => t.type === type) || POWERUP_TYPES[0];
-        const travelTime = rand(3, 5);
         state.powerups.push({
           ...typeInfo,
-          z: 1,
-          speed: 1 / travelTime,
-          angleBase: rand(0, TAU),
+          z: TUNNEL_Z_FAR,
+          speed: getTunnelScrollSpeed(),
+          column: (Math.random() * getHoneycombColumns()) | 0,
           pulse: 0
         });
       }
 
       function getPowerupScreenPoint(p) {
-        const depth = clamp(1 - p.z, 0, 1);
-        const angle = p.angleBase + state.rotation;
-        const eased = Math.pow(depth, 1.08);
-        const radius = state.outerRadius * (0.02 + Math.pow(eased, 1.45) * 0.98);
-        const x = Math.floor(state.cx + Math.cos(angle) * radius);
-        const y = Math.floor(state.cy + Math.sin(angle) * radius * state.tunnelScaleY);
-        return { x, y, depth, scale: 0.08 + Math.pow(eased, 2.25) * 2.25 };
+        const z = Math.max(0, p.z);
+        const depth = clamp((TUNNEL_Z_FAR - z) / TUNNEL_Z_FAR, 0, 1);
+        const angle = getEntityColumnAngle(p.column);
+        const scale = FOV / (FOV + z);
+        const tunnelRadius = getTunnelRadius();
+        const radius = tunnelRadius * scale;
+        return {
+          x: Math.floor(state.cx + Math.cos(angle) * radius),
+          y: Math.floor(state.cy + Math.sin(angle) * radius * state.tunnelScaleY),
+          angle,
+          depth,
+          scale,
+          z,
+          projection: scale
+        };
       }
 
       function activatePowerup(p) {
@@ -2559,6 +2615,81 @@
         return `rgba(${r}, ${g}, ${bl}, ${alpha})`;
       }
 
+      function getTunnelRadius() {
+        return state.outerRadius * 2.45;
+      }
+
+      function getHoneycombColumns() {
+        return state.isMobile ? 18 : 26;
+      }
+
+      function getHoneycombAngleStep() {
+        return TAU / getHoneycombColumns();
+      }
+
+      function getHoneycombGridMetrics() {
+        const columns = getHoneycombColumns();
+        const rows = state.isMobile ? 34 : 46;
+        const visualFar = TUNNEL_Z_FAR * 2.8;
+        const zStep = visualFar / rows;
+        const angleStep = TAU / columns;
+        return {
+          columns,
+          rows,
+          visualFar,
+          zStep,
+          angleStep,
+          tunnelRadius: getTunnelRadius(),
+          angleRadius: angleStep * 0.47,
+          zRadius: zStep * 0.58
+        };
+      }
+
+      function getHoneycombColumnAngle(column) {
+        return getEntityColumnAngle(column);
+      }
+
+      function projectTunnelPoint(angle, z, radius) {
+        const scale = FOV / (FOV + z);
+        const projectedRadius = radius * scale;
+        return {
+          x: state.cx + Math.cos(angle) * projectedRadius,
+          y: state.cy + Math.sin(angle) * projectedRadius * state.tunnelScaleY,
+          radius: projectedRadius,
+          scale,
+          depth: clamp((TUNNEL_Z_FAR - z) / (TUNNEL_Z_FAR - TUNNEL_Z_NEAR), 0, 1),
+          z
+        };
+      }
+
+      function drawHexPath(ctxRef, x, y, radius, rotation) {
+        ctxRef.beginPath();
+        appendHexPath(ctxRef, x, y, radius, rotation);
+      }
+
+      function appendProjectedHoneycombCell(ctxRef, centerAngle, centerZ, angleRadius, zRadius, tunnelRadius) {
+        for (let i = 0; i < 6; i += 1) {
+          const hexAngle = Math.PI / 6 + i * TAU / 6;
+          const angle = centerAngle + Math.cos(hexAngle) * angleRadius;
+          const z = centerZ + Math.sin(hexAngle) * zRadius;
+          const point = projectTunnelPoint(angle, z, tunnelRadius);
+          if (i === 0) ctxRef.moveTo(point.x, point.y);
+          else ctxRef.lineTo(point.x, point.y);
+        }
+        ctxRef.closePath();
+      }
+
+      function appendHexPath(ctxRef, x, y, radius, rotation) {
+        for (let i = 0; i < 6; i += 1) {
+          const angle = rotation + i * TAU / 6;
+          const px = x + Math.cos(angle) * radius;
+          const py = y + Math.sin(angle) * radius;
+          if (i === 0) ctxRef.moveTo(px, py);
+          else ctxRef.lineTo(px, py);
+        }
+        ctxRef.closePath();
+      }
+
       function drawTunnel() {
         const cx = state.cx;
         const cy = state.cy;
@@ -2578,23 +2709,19 @@
         }
 
         ctx.clearRect(0, 0, state.w, state.h);
-        ctx.fillStyle = mixColor(zone.current.main, zone.future.main, zone.t, 1);
+        ctx.fillStyle = CYBER_COLORS.void;
         ctx.fillRect(0, 0, state.w, state.h);
 
-        const bg = ctx.createRadialGradient(cx, cy, inner * 0.2, cx, cy, outer * 1.58);
-        bg.addColorStop(0, mixColor(zone.current.light, zone.future.light, zone.t, 0.16));
-        bg.addColorStop(0.22, mixColor(zone.current.accent, zone.future.accent, zone.t, 0.15));
-        bg.addColorStop(0.56, mixColor(zone.current.main, zone.future.main, zone.t, 0.7));
-        bg.addColorStop(1, 'rgba(0, 0, 0, 0.99)');
+        const bg = ctx.createRadialGradient(cx, cy, inner * 0.5, cx, cy, Math.max(state.w, state.h) * 0.82);
+        bg.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        bg.addColorStop(0.16, 'rgba(8, 5, 28, 0.98)');
+        bg.addColorStop(0.52, 'rgba(10, 12, 44, 0.96)');
+        bg.addColorStop(0.78, 'rgba(18, 9, 38, 0.98)');
+        bg.addColorStop(1, 'rgba(1, 1, 8, 1)');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, state.w, state.h);
 
-        drawFarAtmosphere(zone, cx, cy, outer, inner);
-        drawInteriorRibs(zone, cx, cy, outer, inner);
-        drawWallPanels(zone, cx, cy, outer, inner);
-        drawZoneGeometry(zone, cx, cy, outer, inner);
-        drawDepthBands(zone, cx, cy, outer, inner);
-        drawCylinderSeparators(zone, cx, cy, outer);
+        drawHoneycombTunnel(zone);
         drawCoreDepth(zone, cx, cy, inner, outer);
       }
 
@@ -2625,6 +2752,57 @@
         vignette.addColorStop(1, 'rgba(0,0,0,0.72)');
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, state.w, state.h);
+        ctx.restore();
+      }
+
+      function drawHoneycombTunnel(zone) {
+        const metrics = getHoneycombGridMetrics();
+        const { columns, rows, visualFar, zStep, angleRadius, zRadius, tunnelRadius } = metrics;
+        const zOffset = (zStep - (state.tunnelScroll % zStep)) % zStep;
+
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = CYBER_COLORS.cyan;
+        ctx.shadowBlur = state.isMobile ? 0 : 8;
+        for (let row = rows + 2; row >= -1; row -= 1) {
+          const centerZ = row * zStep + zOffset;
+          const gridRow = Math.round((centerZ + state.tunnelScroll) / zStep);
+          const depth = clamp((visualFar - centerZ) / visualFar, 0, 1);
+          const alpha = 0.035 + depth * 0.36;
+          ctx.beginPath();
+          for (let col = 0; col < columns; col += 1) {
+            const offsetCol = getCellColumn(col, gridRow);
+            const centerAngle = getHoneycombColumnAngle(offsetCol);
+            appendProjectedHoneycombCell(ctx, centerAngle, centerZ, angleRadius, zRadius, tunnelRadius);
+          }
+          ctx.strokeStyle = `rgba(70, 236, 255, ${alpha})`;
+          ctx.lineWidth = 0.5 + depth * 1.7;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawTunnelSpokes(zone) {
+        const spokes = state.isMobile ? 18 : 28;
+        const pulse = 0.55 + Math.sin(state.currentTime * 0.004) * 0.18;
+        ctx.save();
+        ctx.lineCap = 'round';
+        for (let i = 0; i < spokes; i += 1) {
+          const angle = i / spokes * TAU + state.rotation * 0.28;
+          const far = projectTunnelPoint(angle, TUNNEL_Z_FAR, state.outerRadius * 2.2);
+          const near = projectTunnelPoint(angle + Math.sin(i) * 0.015, TUNNEL_Z_NEAR, state.outerRadius * 3.8);
+          ctx.beginPath();
+          ctx.moveTo(far.x, far.y);
+          ctx.lineTo(near.x, near.y);
+          const isHot = i % 7 === 0;
+          ctx.strokeStyle = isHot
+            ? `rgba(255, 54, 190, ${0.08 + pulse * 0.16})`
+            : `rgba(70, 236, 255, ${0.05 + pulse * 0.12})`;
+          ctx.lineWidth = isHot ? 1.4 : 0.85;
+          ctx.shadowColor = isHot ? CYBER_COLORS.magenta : CYBER_COLORS.cyan;
+          ctx.shadowBlur = state.isMobile ? 0 : (isHot ? 10 : 5);
+          ctx.stroke();
+        }
         ctx.restore();
       }
 
@@ -2678,27 +2856,28 @@
 
       function drawSpeedLines(zone, cx, cy, outer, inner) {
         const count = state.isMobile
-          ? 12 + zone.index * 3 + (state.rushMode ? 10 : 0)
-          : 22 + zone.index * 7 + (state.rushMode ? 26 : 0);
-        const speed = state.rushMode ? 0.00072 : 0.00034;
+          ? 18 + (state.rushMode ? 12 : 0)
+          : 34 + (state.rushMode ? 24 : 0);
+        const speed = state.rushMode ? 0.00125 : 0.0007;
         ctx.save();
         ctx.lineCap = 'round';
         for (let i = 0; i < count; i += 1) {
-          const age = ((state.currentTime * speed * (1 + zone.index * 0.32) + i * 0.037) % 1);
-          const angle = (i * 2.399963 + state.rotation * 0.85 + age * (zone.index === 1 ? 1.35 : 0.32)) % TAU;
-          const r1 = lerp(inner * 0.75, outer * 0.98, Math.pow(age, 1.75));
-          const r2 = Math.min(outer * 1.18, r1 + outer * (0.13 + age * 0.18) * (state.rushMode ? 1.35 : 1));
-          const x1 = cx + Math.cos(angle) * r1;
-          const y1 = cy + Math.sin(angle) * r1 * state.tunnelScaleY;
-          const x2 = cx + Math.cos(angle) * r2;
-          const y2 = cy + Math.sin(angle) * r2 * state.tunnelScaleY;
+          const age = ((state.currentTime * speed + i * 0.061) % 1);
+          const angle = i * 2.399963 + state.rotation * 0.52 + Math.sin(i * 17.13) * 0.08;
+          const zFar = lerp(TUNNEL_Z_FAR, TUNNEL_Z_NEAR + 260, age);
+          const zNear = Math.max(TUNNEL_Z_NEAR, zFar - 220 - age * 180);
+          const start = projectTunnelPoint(angle, zFar, state.outerRadius * 2.35);
+          const end = projectTunnelPoint(angle + Math.sin(age * TAU + i) * 0.015, zNear, state.outerRadius * 3.75);
+          const alpha = 0.04 + Math.pow(age, 1.8) * (state.rushMode ? 0.52 : 0.32);
           ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.08 + age * (state.rushMode ? 0.42 : 0.3));
-          ctx.lineWidth = 0.7 + age * (state.rushMode ? 3.2 : 2.25);
-          ctx.shadowColor = mixColor(zone.current.light, zone.future.light, zone.t, 0.28);
-          ctx.shadowBlur = !state.isMobile && age > 0.72 ? 8 : 0;
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.strokeStyle = i % 5 === 0
+            ? `rgba(255, 54, 190, ${alpha * 0.9})`
+            : `rgba(70, 236, 255, ${alpha})`;
+          ctx.lineWidth = 0.65 + age * (state.rushMode ? 3.4 : 2.1);
+          ctx.shadowColor = i % 5 === 0 ? CYBER_COLORS.magenta : CYBER_COLORS.cyan;
+          ctx.shadowBlur = !state.isMobile && age > 0.62 ? 9 : 0;
           ctx.stroke();
         }
         ctx.restore();
@@ -2815,24 +2994,32 @@
       }
 
       function drawCoreDepth(zone, cx, cy, inner, outer) {
-        const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, inner * 5.2);
-        core.addColorStop(0, mixColor(zone.current.light, zone.future.light, zone.t, 0.36));
-        core.addColorStop(0.16, mixColor(zone.current.accent, zone.future.accent, zone.t, 0.2));
-        core.addColorStop(0.5, 'rgba(0, 0, 0, 0.12)');
+        const pulse = 0.5 + Math.sin(state.currentTime * 0.004) * 0.5;
+        const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, inner * 2.4);
+        core.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        core.addColorStop(0.22, 'rgba(2, 3, 18, 0.96)');
+        core.addColorStop(0.46, `rgba(80, 42, 160, ${0.14 + pulse * 0.08})`);
+        core.addColorStop(0.72, `rgba(70, 236, 255, ${0.05 + pulse * 0.04})`);
         core.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = core;
         ctx.beginPath();
-        ctx.arc(cx, cy, inner * 5.2, 0, TAU);
+        ctx.arc(cx, cy, inner * 2.4, 0, TAU);
         ctx.fill();
 
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(1, state.tunnelScaleY);
+        ctx.lineWidth = Math.max(1.4, outer * 0.006);
+        ctx.strokeStyle = `rgba(70, 236, 255, ${0.1 + pulse * 0.07})`;
+        ctx.shadowColor = CYBER_COLORS.cyan;
+        ctx.shadowBlur = state.isMobile ? 0 : 12;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, outer * 1.03, outer * state.tunnelScaleY * 1.03, 0, 0, TAU);
-        ctx.strokeStyle = mixColor(zone.current.metal, zone.future.metal, zone.t, 0.78);
-        ctx.lineWidth = Math.max(22, outer * 0.095);
-        ctx.shadowColor = 'rgba(0,0,0,0.86)';
-        ctx.shadowBlur = state.isMobile ? 0 : 22;
+        ctx.moveTo(-inner * 1.7, 0);
+        ctx.lineTo(inner * 1.7, 0);
+        ctx.moveTo(0, -inner * 1.7);
+        ctx.lineTo(0, inner * 1.7);
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
       function drawSparks() {
@@ -2853,28 +3040,29 @@
       function drawPlayer() {
         ctx.save();
 
-        // 运动拖尾
-        const trailColor = state.rushMode ? '255, 215, 0' : '120, 240, 255';
+        const trailColor = state.rushMode ? '255, 215, 0' : '70, 236, 255';
+        ctx.globalCompositeOperation = 'lighter';
         for (let i = 0; i < state.playerTrailHistory.length; i++) {
           const p = state.playerTrailHistory[i];
           const t = i / state.playerTrailHistory.length;
-          ctx.fillStyle = `rgba(${trailColor}, ${t * 0.32})`;
+          ctx.fillStyle = `rgba(${trailColor}, ${t * 0.3})`;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, state.player.radius * (0.45 + t * 0.55), 0, TAU);
+          ctx.arc(p.x, p.y, state.player.radius * (0.36 + t * 0.66), 0, TAU);
           ctx.fill();
         }
 
         const pulseRate = state.rushMode ? 0.022 : 0.012;
         const pulse = 1 + Math.sin(state.currentTime * pulseRate) * 0.08;
         const glow = 22 + Math.sin(state.currentTime * 0.008) * 4;
-        const playerColor = state.rushMode ? '#ffd700' : '#78f0ff';
-        const playerShadow = state.rushMode ? 'rgba(255, 215, 0, 0.95)' : 'rgba(120, 240, 255, 0.9)';
+        const playerColor = state.rushMode ? '#ffd700' : '#46ecff';
+        const playerShadow = state.rushMode ? 'rgba(255, 215, 0, 0.95)' : CYBER_COLORS.cyan;
         ctx.fillStyle = playerColor;
         ctx.shadowColor = playerShadow;
-        ctx.shadowBlur = state.rushMode ? 28 : Math.min(14, glow);
+        ctx.shadowBlur = state.rushMode ? 30 : Math.min(18, glow);
         ctx.beginPath();
         ctx.arc(state.player.x, state.player.y, state.player.radius * pulse, 0, TAU);
         ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
 
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.shadowBlur = 0;
@@ -2903,85 +3091,76 @@
         ctx.restore();
       }
 
-      function drawObstacleMarker(point, depth) {
-        const r = state.outerRadius * 0.9;
-        const x = state.cx + Math.cos(point.angle) * r;
-        const y = state.cy + Math.sin(point.angle) * r * state.tunnelScaleY;
-        ctx.save();
-        ctx.strokeStyle = `rgba(255, 48, 72, ${0.22 + depth * 0.5})`;
-        ctx.fillStyle = `rgba(255, 48, 72, ${0.08 + depth * 0.28})`;
-        ctx.lineWidth = 2 + depth * 2;
-        ctx.shadowColor = 'rgba(255, 48, 72, 0.45)';
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(x, y, 12 + depth * 18, 0, TAU);
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(state.cx, state.cy);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = `rgba(255, 48, 72, ${0.06 + depth * 0.14})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.restore();
-      }
-
       function drawObstacle(obstacle) {
-        const point = getObstacleScreenPoint(obstacle);
-        const depth = point.depth;
-        const scale = point.scale;
-        drawObstacleMarker(point, depth);
-        const blink = 0.45 + 0.55 * Math.sin((state.currentTime * 0.018) + obstacle.flashSeed + depth * 5);
-        const textAlpha = clamp(0.56 + blink * 0.38, 0.2, 1);
-        const base = obstacle.size * scale;
-        const gap = base * 0.16;
-        const cube = base * 0.62;
-        const rowOffset = obstacle.size * scale * 0.44;
-        const redFill = `rgba(255, 52, 84, ${0.2 + depth * 0.48})`;
-        const redEdge = `rgba(255, 170, 184, ${0.18 + depth * 0.32})`;
-        const hot = `rgba(255, 80, 110, ${0.18 + depth * 0.6})`;
-
+        const metrics = getHoneycombGridMetrics();
+        const blink = 0.45 + 0.55 * Math.sin((state.currentTime * 0.02) + obstacle.flashSeed);
         ctx.save();
-        ctx.translate(point.x, point.y);
-        ctx.rotate(point.angle + Math.PI / 2 + (obstacle.spinAngle || 0));
-        ctx.shadowColor = 'rgba(255, 51, 85, 0.55)';
-        ctx.shadowBlur = 0;
-
-        for (let i = 0; i < obstacle.cells.length; i += 1) {
-          const cell = obstacle.cells[i];
-          const ox = Math.floor(cell.x * rowOffset);
-          const oy = Math.floor(cell.y * rowOffset * 1.1);
-          const wobble = Math.sin(state.currentTime * 0.012 + obstacle.flashSeed + i) * 0.7;
-          const size = cube * (0.92 + cell.glow * 0.16 + wobble * 0.04);
-          drawCubeTile(ctx, ox, oy, size, redFill, redEdge, hot, i % 3 === 0 ? 1 : 0.72);
+        ctx.shadowColor = CYBER_COLORS.warning;
+        ctx.shadowBlur = state.isMobile ? 0 : 18;
+        ctx.lineJoin = 'round';
+        for (const cell of obstacle.cells) {
+          const point = getObstacleCellPoint(obstacle, cell);
+          const depth = point.depth;
+          const fill = `rgba(255, 45, 115, ${0.32 + depth * 0.5})`;
+          const edge = `rgba(255, 210, 235, ${0.45 + depth * 0.5})`;
+          const core = `rgba(255, 54, 190, ${0.18 + blink * 0.34})`;
+          ctx.beginPath();
+          appendProjectedHoneycombCell(ctx, point.angle, point.z, metrics.angleRadius, metrics.zRadius, metrics.tunnelRadius);
+          ctx.fillStyle = fill;
+          ctx.strokeStyle = edge;
+          ctx.lineWidth = Math.max(1.2, point.scale * metrics.zRadius * 0.1);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          appendProjectedHoneycombCell(ctx, point.angle, point.z, metrics.angleRadius * 0.55, metrics.zRadius * 0.55, metrics.tunnelRadius);
+          ctx.fillStyle = core;
+          ctx.fill();
         }
-
         ctx.shadowBlur = 0;
         ctx.restore();
       }
 
-      function drawCubeTile(ctxRef, x, y, size, fill, edge, hot, brightness) {
-        const half = size * 0.5;
-        const bevel = size * 0.18;
+      function drawWallTile(ctxRef, x, y, size, fill, edge, core) {
         ctxRef.fillStyle = fill;
         ctxRef.strokeStyle = edge;
-        ctxRef.lineWidth = Math.max(1, size * 0.06);
+        ctxRef.lineWidth = Math.max(1, size * 0.07);
+        drawHexPath(ctxRef, x, y, size * 0.58, Math.PI / 6);
+        ctxRef.fill();
+        ctxRef.stroke();
+        ctxRef.fillStyle = core;
+        drawHexPath(ctxRef, x, y, size * 0.32, Math.PI / 6);
+        ctxRef.fill();
+      }
+
+      function drawCrystalTile(ctxRef, x, y, size, fill, edge, core, brightness) {
+        const half = size * 0.5;
+        const point = size * 0.28;
+        ctxRef.fillStyle = fill;
+        ctxRef.strokeStyle = edge;
+        ctxRef.lineWidth = Math.max(1, size * 0.055);
         ctxRef.beginPath();
-        ctxRef.rect(Math.floor(x - half), Math.floor(y - half), Math.floor(size), Math.floor(size));
+        ctxRef.moveTo(x, y - half - point);
+        ctxRef.lineTo(x + half, y - half * 0.25);
+        ctxRef.lineTo(x + half * 0.62, y + half);
+        ctxRef.lineTo(x, y + half + point * 0.72);
+        ctxRef.lineTo(x - half * 0.62, y + half);
+        ctxRef.lineTo(x - half, y - half * 0.25);
+        ctxRef.closePath();
         ctxRef.fill();
         ctxRef.stroke();
 
-        ctxRef.fillStyle = hot;
+        ctxRef.strokeStyle = `rgba(255, 255, 255, ${0.08 * brightness})`;
+        ctxRef.lineWidth = Math.max(0.7, size * 0.025);
         ctxRef.beginPath();
-        ctxRef.moveTo(x - half, y - half);
-        ctxRef.lineTo(x + half, y - half);
-        ctxRef.lineTo(x + half - bevel, y - half + bevel);
-        ctxRef.lineTo(x - half + bevel, y - half + bevel);
-        ctxRef.closePath();
-        ctxRef.fill();
+        ctxRef.moveTo(x, y - half - point * 0.82);
+        ctxRef.lineTo(x, y + half + point * 0.52);
+        ctxRef.moveTo(x - half * 0.44, y - half * 0.18);
+        ctxRef.lineTo(x + half * 0.44, y - half * 0.18);
+        ctxRef.stroke();
 
-        ctxRef.fillStyle = `rgba(255, 255, 255, ${0.06 * brightness})`;
-        ctxRef.fillRect(Math.floor(x - half + size * 0.16), Math.floor(y - half + size * 0.16), Math.max(1, Math.floor(size * 0.22)), Math.max(1, Math.floor(size * 0.22)));
+        ctxRef.fillStyle = core;
+        drawHexPath(ctxRef, x, y, size * 0.22, Math.PI / 6);
+        ctxRef.fill();
       }
 
       function roundRect(ctxRef, x, y, width, height, radius) {
@@ -3002,20 +3181,21 @@
       function drawBackgroundMist(zone) {
         ctx.save();
         const mistCount = state.isMobile
-          ? 8 + zone.index + (state.rushMode ? 5 : 0)
-          : 18 + zone.index * 3 + (state.rushMode ? 12 : 0);
+          ? 10 + (state.rushMode ? 6 : 0)
+          : 24 + (state.rushMode ? 14 : 0);
+        ctx.globalCompositeOperation = 'lighter';
         for (let i = 0; i < mistCount; i += 1) {
-          const t = i / mistCount;
-          const drift = ((state.currentTime * (state.rushMode ? 0.00055 : 0.00022) + i * 0.071) % 1);
-          const angle = t * TAU + state.rotation * 0.18 + Math.sin(drift * TAU + i) * 0.28;
-          const radius = state.outerRadius * (0.22 + Math.pow(drift, 1.3) * 1.02);
-          const x = state.cx + Math.cos(angle) * radius;
-          const y = state.cy + Math.sin(angle) * radius * state.tunnelScaleY;
-          ctx.fillStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.025 + drift * 0.11);
+          const drift = ((state.currentTime * (state.rushMode ? 0.00058 : 0.00028) + i * 0.073) % 1);
+          const angle = i * 2.399963 + state.rotation * 0.2 + Math.sin(drift * TAU + i) * 0.22;
+          const z = lerp(TUNNEL_Z_FAR, TUNNEL_Z_NEAR, drift);
+          const point = projectTunnelPoint(angle, z, state.outerRadius * (2.2 + (i % 3) * 0.35));
+          const alpha = 0.02 + drift * 0.1;
+          ctx.fillStyle = i % 4 === 0 ? `rgba(255, 54, 190, ${alpha})` : `rgba(70, 236, 255, ${alpha})`;
           ctx.beginPath();
-          ctx.arc(x, y, 1.2 + drift * 4.2 + (i % 3), 0, TAU);
+          ctx.arc(point.x, point.y, 1.1 + drift * 3.8 + (i % 3) * 0.45, 0, TAU);
           ctx.fill();
         }
+        ctx.globalCompositeOperation = 'source-over';
         ctx.restore();
       }
 
@@ -3024,28 +3204,27 @@
         ctx.save();
         ctx.translate(state.cx, state.cy);
         ctx.scale(1, state.tunnelScaleY);
-        const count = state.isMobile ? 3 : 5;
-        const base = state.outerRadius * 1.14;
-        const speed = state.rushMode ? 1.65 : 1;
+        const count = state.isMobile ? 2 : 4;
+        const speed = state.rushMode ? 1.85 : 1;
         for (let i = 0; i < count; i += 1) {
-          const phase = ((state.currentTime * 0.00016 * speed + i / count) % 1);
-          const radius = base + Math.pow(phase, 2.15) * state.outerRadius * 0.86;
-          const angle = i * 1.986 + state.rotation * 0.32 + phase * 0.8;
-          const span = 0.28 + (i % 2) * 0.14;
-          const thickness = state.outerRadius * (0.095 + phase * 0.075);
+          const phase = ((state.currentTime * 0.00022 * speed + i / count) % 1);
+          const radius = state.outerRadius * (1.02 + Math.pow(phase, 2) * 0.62);
+          const angle = i * 1.986 + state.rotation * 0.28 + phase * 0.45;
+          const span = 0.22 + phase * 0.18;
+          const alpha = 0.07 + phase * 0.13;
           ctx.rotate(angle);
           ctx.beginPath();
           ctx.arc(0, 0, radius, -span, span);
-          ctx.strokeStyle = `rgba(0, 0, 0, ${0.42 + phase * 0.34})`;
-          ctx.lineWidth = thickness;
+          ctx.strokeStyle = `rgba(3, 4, 18, ${0.48 + phase * 0.28})`;
+          ctx.lineWidth = state.outerRadius * (0.07 + phase * 0.045);
           ctx.lineCap = 'butt';
           ctx.stroke();
           ctx.beginPath();
-          ctx.arc(0, 0, radius - thickness * 0.42, -span * 0.9, span * 0.9);
-          ctx.strokeStyle = mixColor(zone.current.light, zone.future.light, zone.t, 0.08 + phase * 0.12);
-          ctx.lineWidth = Math.max(2, thickness * 0.08);
-          ctx.shadowColor = mixColor(zone.current.accent, zone.future.accent, zone.t, 0.16);
-          ctx.shadowBlur = state.isMobile ? 0 : 8;
+          ctx.arc(0, 0, radius, -span * 0.72, span * 0.72);
+          ctx.strokeStyle = i % 2 === 0 ? `rgba(70, 236, 255, ${alpha})` : `rgba(255, 54, 190, ${alpha})`;
+          ctx.lineWidth = Math.max(1.4, state.outerRadius * 0.01);
+          ctx.shadowColor = i % 2 === 0 ? CYBER_COLORS.cyan : CYBER_COLORS.magenta;
+          ctx.shadowBlur = state.isMobile ? 0 : 10;
           ctx.stroke();
           ctx.rotate(-angle);
         }
@@ -3078,29 +3257,16 @@
       function render() {
         const zone = getZoneBlend();
         drawTunnel();
-        drawBackgroundMist(zone);
-        drawSpeedLines(zone, state.cx, state.cy, state.outerRadius, state.innerRadius);
-        drawForegroundGates(zone);
         drawZoneShockwave(zone);
 
         // 尾迹粒子
         drawTrails();
 
-        // 道具
-        drawPowerups();
-
         // 危险预警
         drawDangerWarning();
 
-        if (state.mode === 'running') {
-          for (const obstacle of state.obstacles) {
-            drawObstacle(obstacle);
-          }
-          drawPlayer();
-        } else if (state.mode === 'locking') {
-          for (const obstacle of state.obstacles) {
-            drawObstacle(obstacle);
-          }
+        if (state.mode === 'running' || state.mode === 'locking') {
+          drawDepthSortedEntities();
           drawPlayer();
         }
 
@@ -3183,7 +3349,7 @@
         // 双击战术冷却 / 就绪 指示（与 itemNotify 同区域，略下方）
         if (state.mode === 'running') {
           const nowSec = state.currentTime / 1000;
-          const remain = Math.max(0, 5 - (nowSec - state.lastTapResetTime));
+          const remain = Math.max(0, TACTICAL_RESET_COOLDOWN - (nowSec - state.lastTapResetTime));
           const ready = remain <= 0;
           const label = ready ? '双击技能就绪' : `技能冷却 ${remain.toFixed(1)}s`;
           const color = ready ? '#ffd700' : '#ff9696';
@@ -3228,27 +3394,36 @@
         ctx.globalAlpha = 1;
       }
 
-      function drawPowerups() {
-        for (const p of state.powerups) {
-          const point = getPowerupScreenPoint(p);
-          p.pulse += 0.05;
-          const size = 14 * point.scale * (1 + Math.sin(p.pulse) * 0.15);
-          const alpha = 0.5 + point.depth * 0.5;
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.fillStyle = p.color;
-          ctx.shadowColor = p.color;
-          ctx.shadowBlur = 12;
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, size, 0, TAU);
-          ctx.fill();
-          ctx.fillStyle = '#fff';
-          ctx.shadowBlur = 0;
-          ctx.font = `bold ${Math.floor(size * 0.9)}px monospace`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(p.symbol, point.x, point.y);
-          ctx.restore();
+      function drawPowerup(p) {
+        const point = getPowerupScreenPoint(p);
+        p.pulse += 0.05;
+        const size = Math.max(12, 34 * point.scale) * (1 + Math.sin(p.pulse) * 0.15);
+        const alpha = 0.35 + point.depth * 0.65;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = state.isMobile ? 0 : 12;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, size, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 0;
+        ctx.font = `bold ${Math.floor(size * 0.9)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.symbol, point.x, point.y);
+        ctx.restore();
+      }
+
+      function drawDepthSortedEntities() {
+        const entities = [
+          ...state.obstacles.map(item => ({ kind: 'obstacle', z: item.z, item })),
+          ...state.powerups.map(item => ({ kind: 'powerup', z: item.z, item }))
+        ].sort((a, b) => b.z - a.z);
+        for (const entity of entities) {
+          if (entity.kind === 'obstacle') drawObstacle(entity.item);
+          else drawPowerup(entity.item);
         }
       }
 
@@ -3256,8 +3431,8 @@
         if (state.mode !== 'running') return;
         let maxDanger = 0;
         for (const obs of state.obstacles) {
-          if (obs.z < 0.3 && obs.z > 0.09) {
-            const danger = 1 - obs.z / 0.3;
+          if (obs.z < 260 && obs.z > -COLLISION_Z_WINDOW) {
+            const danger = clamp(1 - Math.max(obs.z, 0) / 260, 0, 1);
             if (danger > maxDanger) maxDanger = danger;
           }
         }
@@ -3286,12 +3461,12 @@
         if (Math.abs(state.tilt) < 0.85) return;
         let mostUrgent = null;
         for (const obs of state.obstacles) {
-          if (obs.z > 0.3 || obs.z < 0.09) continue;
+          if (obs.z > 260 || obs.z < -COLLISION_Z_WINDOW) continue;
           const obsAng = getObstacleAngle(obs);
           const d = Math.atan2(Math.sin(obsAng - state.player.angle), Math.cos(obsAng - state.player.angle));
           if (Math.abs(d) < 0.45) {
             if (!mostUrgent || obs.z < mostUrgent.z) {
-              mostUrgent = { z: obs.z, urgency: 1 - obs.z / 0.3, direction: d > 0 ? 'right' : 'left' };
+              mostUrgent = { z: obs.z, urgency: clamp(1 - Math.max(obs.z, 0) / 260, 0, 1), direction: d > 0 ? 'right' : 'left' };
             }
           }
         }
@@ -3434,22 +3609,27 @@
       // 双击屏幕技能
       let lastTapTime = 0;
       function performTacticalReset() {
-        const nowSec = performance.now() / 1000;
-        if (nowSec - state.lastTapResetTime < 5) {
+        const nowSec = state.currentTime / 1000;
+        if (nowSec - state.lastTapResetTime < TACTICAL_RESET_COOLDOWN) {
           state.itemNotify = { text: '技能冷却中', color: '#ff8888' };
           state.itemNotifyTimer = 0.8;
           if (audio.initialized) audio.playCollision();
           return;
         }
+        const playerZ = getPlayerTunnelZ();
+        const clearWindow = Math.max(COLLISION_Z_WINDOW * 2.8, getHoneycombGridMetrics().zStep * 2.2);
+        let cleared = 0;
         for (let i = state.obstacles.length - 1; i >= 0; i -= 1) {
-          if (state.obstacles[i].z < 0.45) {
+          const obstacle = state.obstacles[i];
+          if (obstacle.z <= playerZ + clearWindow && obstacle.z >= playerZ - clearWindow) {
             state.obstacles.splice(i, 1);
+            cleared += 1;
           }
         }
         state.activePowerups.invincible = Math.max(state.activePowerups.invincible, 0.8);
         state.flashAlpha = Math.max(state.flashAlpha, 0.4);
         triggerShake(0.15, 4);
-        state.itemNotify = { text: '防火墙干扰', color: '#ffd700' };
+        state.itemNotify = { text: cleared > 0 ? `清除威胁 x${cleared}` : '防火墙干扰', color: '#ffd700' };
         state.itemNotifyTimer = 0.8;
         if (audio.initialized) audio.playPowerupPickup('speedBoost');
         state.lastTapResetTime = nowSec;
