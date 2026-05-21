@@ -328,6 +328,123 @@
       flex-wrap: wrap;
     }
 
+    .leaderboard-fab {
+      position: fixed;
+      right: calc(16px + env(safe-area-inset-right, 0px));
+      bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+      z-index: 9998;
+      min-width: 124px;
+      min-height: 46px;
+      border: 1px solid rgba(68, 217, 255, 0.42);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(7, 24, 36, 0.86), rgba(0, 255, 136, 0.14));
+      color: #dffbff;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      box-shadow: 0 0 26px rgba(68, 217, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: transform 180ms var(--ease-out-quart), border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .leaderboard-fab:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 255, 136, 0.62);
+      box-shadow: 0 0 34px rgba(0, 255, 136, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .leaderboard-panel {
+      display: none;
+      z-index: 9;
+      background: radial-gradient(circle at 50% 20%, rgba(68, 217, 255, 0.12), rgba(0, 0, 0, 0.94) 66%);
+    }
+
+    .leaderboard-box {
+      width: min(92vw, 620px);
+      max-height: min(76vh, 680px);
+      overflow: hidden;
+      border: 1px solid rgba(68, 217, 255, 0.3);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(2, 15, 24, 0.94), rgba(0, 0, 0, 0.9));
+      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.72), 0 0 44px rgba(68, 217, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      padding: 20px;
+      animation: leaderboardEnter 260ms var(--ease-out-expo) both;
+    }
+
+    .leaderboard-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .leaderboard-head h2 {
+      margin: 0;
+      color: var(--blue);
+      font-size: clamp(20px, 5vw, 32px);
+      letter-spacing: 0.12em;
+      text-shadow: 0 0 18px rgba(68, 217, 255, 0.22);
+    }
+
+    .leaderboard-close {
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid rgba(68, 217, 255, 0.24);
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.34);
+      color: #dffbff;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .leaderboard-list {
+      max-height: min(56vh, 500px);
+      overflow-y: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 11px 12px;
+      border: 1px solid rgba(68, 217, 255, 0.14);
+      border-radius: 14px;
+      background: linear-gradient(90deg, rgba(68, 217, 255, 0.08), rgba(0, 255, 136, 0.04));
+      color: rgba(223, 251, 255, 0.9);
+    }
+
+    .leaderboard-rank {
+      color: var(--green);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .leaderboard-score {
+      color: var(--blue);
+      font-weight: 800;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .leaderboard-empty {
+      padding: 28px 14px;
+      border: 1px dashed rgba(68, 217, 255, 0.24);
+      border-radius: 16px;
+      color: rgba(223, 251, 255, 0.66);
+      text-align: center;
+    }
+
+    @keyframes leaderboardEnter {
+      from { opacity: 0; transform: translateY(18px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
     .blink-text {
       color: var(--red);
       font-size: 12px;
@@ -1074,12 +1191,25 @@
         <div class="terminal" id="reportText" aria-live="polite"></div>
         <div id="scoreBoard" style="margin-top:12px; padding:10px 14px; border-radius:12px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15); font-size:13px; line-height:1.8; color:var(--green);"></div>
         <div class="footer-row">
+          <button id="reportLeaderboardBtn" class="btn secondary" type="button">查看完整排行榜</button>
           <div class="blink-text" id="reportMeta">已完成高维裁决</div>
         </div>
       </div>
     </div>
+
+    <div class="overlay leaderboard-panel" id="leaderboardPanel" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+      <div class="leaderboard-box">
+        <div class="leaderboard-head">
+          <h2 id="leaderboardTitle">GLOBAL LEADERBOARD</h2>
+          <button id="leaderboardCloseBtn" class="leaderboard-close" type="button" aria-label="关闭排行榜">×</button>
+        </div>
+        <div class="tiny" id="leaderboardMeta">正在同步全局入侵记录...</div>
+        <div class="leaderboard-list" id="leaderboardList" aria-live="polite"></div>
+      </div>
+    </div>
   </div>
 
+  <button id="leaderboardBtn" class="leaderboard-fab" type="button">排行榜</button>
   <button id="emergencyRestartBtn" style="position:fixed; right:calc(16px + env(safe-area-inset-right, 0px)); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:9999; display:none; padding:12px 20px; border:2px solid #ff3355; border-radius:24px; background:rgba(255,51,85,0.22); color:#fff; font-weight:700; font-size:14px; letter-spacing:0.04em; box-shadow:0 0 24px rgba(255,51,85,0.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); cursor:pointer;">🔄 强制重启</button>
 
   <script>
@@ -1095,6 +1225,12 @@
       const lockStateText = document.getElementById('lockStateText');
       const reportText = document.getElementById('reportText');
       const reportMeta = document.getElementById('reportMeta');
+      const leaderboardPanel = document.getElementById('leaderboardPanel');
+      const leaderboardBtn = document.getElementById('leaderboardBtn');
+      const reportLeaderboardBtn = document.getElementById('reportLeaderboardBtn');
+      const leaderboardCloseBtn = document.getElementById('leaderboardCloseBtn');
+      const leaderboardList = document.getElementById('leaderboardList');
+      const leaderboardMeta = document.getElementById('leaderboardMeta');
       const emergencyRestartBtn = document.getElementById('emergencyRestartBtn');
       const startBtn = document.getElementById('startBtn');
       const aliasInput = document.getElementById('aliasInput');
@@ -1474,9 +1610,9 @@
         '别灰心，你至少成功触发了我的第二层防御。',
         '我已经把你的入侵记录存档了，作为反面教材。'
       ];
-      const AI_API_URL = 'YOUR_API_URL_HERE';
-      const AI_API_TOKEN = 'YOUR_BEARER_TOKEN_HERE';
-      const AI_MODEL = 'YOUR_MODEL_HERE';
+      const AI_API_URL = '/api/ai-taunt';
+      const LEADERBOARD_API_URL = '/api/leaderboard';
+      const AI_API_TIMEOUT_MS = 8000;
       const LOCK_NOISE_CHARS = '01[]{}<>/\\|#@$%*&^+-=ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const MAX_TAUNT_LEN = 50;
       const TUNNEL_ROT_SPEED = 0.72;
@@ -1631,7 +1767,8 @@
         lastZoneIndex: 0,
         starSpawnTimer: 1.5,
         paused: false,
-        tunnelScroll: 0
+        tunnelScroll: 0,
+        leaderboard: []
       };
 
       function clamp(value, min, max) {
@@ -1743,6 +1880,8 @@
         startOverlay.classList.toggle('hidden', nextMode !== 'idle');
         lockOverlay.style.display = (nextMode === 'locking') ? 'flex' : 'none';
         reportPanel.style.display = (nextMode === 'report') ? 'flex' : 'none';
+        leaderboardBtn.style.display = (nextMode === 'idle' || nextMode === 'report') ? 'block' : 'none';
+        if (nextMode !== 'idle' && nextMode !== 'report') closeLeaderboard();
         emergencyRestartBtn.style.display = (nextMode === 'locking' || nextMode === 'report') ? 'block' : 'none';
         if (nextMode !== 'running') {
           state.paused = false;
@@ -2132,6 +2271,9 @@
           try { localStorage.setItem('cyber_highscore', String(state.highScore)); } catch (e) {}
         }
         saveLeaderboard(state.score, state.surviveLocked, state.alias);
+        syncLeaderboard(state.score, state.surviveLocked, state.alias).catch((error) => {
+          console.warn('[Cyber Infiltration] leaderboard sync failed.', error);
+        });
         lockStateText.textContent = '追踪中...';
         lockNoise.textContent = '';
         setMode('locking');
@@ -2156,6 +2298,59 @@
         } catch (e) {}
       }
 
+      async function syncLeaderboard(score, time, alias) {
+        const response = await fetch(LEADERBOARD_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            alias: alias || '匿名骇客',
+            score: Number(score) || 0,
+            time: Number(time) || 0
+          })
+        });
+        if (!response.ok) throw new Error(`排行榜上传失败：${response.status}`);
+        const data = await response.json();
+        state.leaderboard = Array.isArray(data.entries) ? data.entries : [];
+      }
+
+      async function loadLeaderboard(limit = 10) {
+        const response = await fetch(`${LEADERBOARD_API_URL}?limit=${limit}`);
+        if (!response.ok) throw new Error(`排行榜读取失败：${response.status}`);
+        const data = await response.json();
+        state.leaderboard = Array.isArray(data.entries) ? data.entries : [];
+      }
+
+      function renderFullLeaderboard(entries) {
+        if (!entries.length) {
+          leaderboardList.innerHTML = '<div class="leaderboard-empty">暂无入侵记录，等待第一位骇客留下坐标。</div>';
+          leaderboardMeta.textContent = '全局记录为空';
+          return;
+        }
+        leaderboardMeta.textContent = `已同步 ${entries.length} 条全局记录`;
+        leaderboardList.innerHTML = entries.map((item, i) => {
+          const seconds = Number(item.survival_time ?? item.time ?? 0).toFixed(1);
+          return `<div class="leaderboard-row"><span class="leaderboard-rank">#${i + 1}</span><span>${escapeHtml(item.alias || '匿名骇客')}<br><small>${seconds}s 存活</small></span><span class="leaderboard-score">${Number(item.score) || 0}</span></div>`;
+        }).join('');
+      }
+
+      async function openLeaderboard() {
+        leaderboardPanel.style.display = 'flex';
+        leaderboardMeta.textContent = '正在同步全局入侵记录...';
+        leaderboardList.innerHTML = '<div class="leaderboard-empty">连接主机数据库...</div>';
+        try {
+          await loadLeaderboard(50);
+          renderFullLeaderboard(state.leaderboard);
+        } catch (error) {
+          console.warn('[Cyber Infiltration] full leaderboard load failed.', error);
+          leaderboardMeta.textContent = '全局同步失败';
+          leaderboardList.innerHTML = '<div class="leaderboard-empty">主机链路不稳定，请稍后重试。</div>';
+        }
+      }
+
+      function closeLeaderboard() {
+        leaderboardPanel.style.display = 'none';
+      }
+
       function cancelAiTyping() {
         if (state.aiTypingTimer) {
           clearTimeout(state.aiTypingTimer);
@@ -2171,26 +2366,27 @@
           .slice(0, MAX_TAUNT_LEN) || FALLBACK_TAUNT;
       }
 
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
       async function fetchAiTaunt(alias, seconds, sessionId) {
-        const systemPrompt = '你是一个冷酷、傲慢、高维度的赛博主机意识，像 Agent Smith 一样俯视入侵者。你的回答必须是中文，最多50个汉字，语气像网络防火墙反派在嘲讽失败的黑客。不要解释，不要换行。';
-        const userPrompt = `有一个代号为 ${alias || '无名骇客'} 的人类黑客试图潜入你的核心数据库，但他只坚持了 ${seconds} 秒就被你的基础防火墙拦截了。请用极其傲慢、冷酷且带有一点幽默的赛博朋克反派语气嘲讽他的技术，字数限制在 50 字以内。`;
         const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 8000);
+        const timeout = window.setTimeout(() => controller.abort(), AI_API_TIMEOUT_MS);
         try {
           const response = await fetch(AI_API_URL, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${AI_API_TOKEN}`
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              model: AI_MODEL,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-              ],
-              temperature: 0.9,
-              max_tokens: 90
+              alias: alias || '无名骇客',
+              seconds: Number(seconds) || 0
             }),
             signal: controller.signal
           });
@@ -2240,25 +2436,36 @@
         typeReport(`> 入侵代号：${alias}\n> 存活时长：${state.surviveLocked.toFixed(1)} 秒\n> 主脑裁决：\n${taunt}`);
         state.aiFinalText = taunt;
         state.aiText = taunt;
-        renderScoreboard();
+        loadLeaderboard().catch((error) => {
+          console.warn('[Cyber Infiltration] leaderboard load failed.', error);
+        }).finally(renderScoreboard);
       }
 
       function renderScoreboard() {
-        let html = `<div>入侵代号：<strong>${state.alias || '匿名骇客'}</strong></div>`;
+        let html = `<div>入侵代号：<strong>${escapeHtml(state.alias || '匿名骇客')}</strong></div>`;
         html += `<div>本次分数：<strong>${state.score}</strong> | 最高连击：<strong>x${state.maxCombo}</strong></div>`;
         if (state.highScore > 0) {
           html += `<div>历史最高：<strong>${state.highScore}</strong></div>`;
         }
-        try {
-          const raw = localStorage.getItem('cyber_leaderboard');
-          const list = raw ? JSON.parse(raw) : [];
-          if (list.length > 0) {
-            html += '<div style="margin-top:6px; border-top:1px solid rgba(0,255,136,0.12); padding-top:6px;">排行榜：</div>';
-            list.forEach((item, i) => {
-              html += `<div>${i + 1}. ${item.alias || '匿名骇客'}：${item.score} 分 / ${item.time}s</div>`;
-            });
-          }
-        } catch (e) {}
+        const remoteList = state.leaderboard || [];
+        if (remoteList.length > 0) {
+          html += '<div style="margin-top:6px; border-top:1px solid rgba(0,255,136,0.12); padding-top:6px;">全局排行榜：</div>';
+          remoteList.forEach((item, i) => {
+            const seconds = Number(item.survival_time ?? item.time ?? 0).toFixed(1);
+            html += `<div>${i + 1}. ${escapeHtml(item.alias || '匿名骇客')}：${item.score} 分 / ${seconds}s</div>`;
+          });
+        } else {
+          try {
+            const raw = localStorage.getItem('cyber_leaderboard');
+            const list = raw ? JSON.parse(raw) : [];
+            if (list.length > 0) {
+              html += '<div style="margin-top:6px; border-top:1px solid rgba(0,255,136,0.12); padding-top:6px;">本地排行榜：</div>';
+              list.forEach((item, i) => {
+                html += `<div>${i + 1}. ${escapeHtml(item.alias || '匿名骇客')}：${item.score} 分 / ${item.time}s</div>`;
+              });
+            }
+          } catch (e) {}
+        }
         // 成就显示
         if (state.achievements.length > 0) {
           html += '<div style="margin-top:6px; border-top:1px solid rgba(0,255,136,0.12); padding-top:6px;">已解锁成就：</div>';
@@ -3650,6 +3857,12 @@
         if (state.mode === 'running' && !state.paused) handleTap();
       });
       pauseOverlay.addEventListener('click', togglePause);
+      leaderboardBtn.addEventListener('click', openLeaderboard);
+      reportLeaderboardBtn.addEventListener('click', openLeaderboard);
+      leaderboardCloseBtn.addEventListener('click', closeLeaderboard);
+      leaderboardPanel.addEventListener('click', (event) => {
+        if (event.target === leaderboardPanel) closeLeaderboard();
+      });
       emergencyRestartBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         restartGame();
