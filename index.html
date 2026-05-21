@@ -2287,14 +2287,22 @@
         beginAiResolution(state.sessionId);
       }
 
+      function loadLocalLeaderboard(limit = 5) {
+        try {
+          const raw = localStorage.getItem('cyber_leaderboard');
+          const list = raw ? JSON.parse(raw) : [];
+          return Array.isArray(list) ? list.slice(0, limit) : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
       function saveLeaderboard(score, time, alias) {
         try {
-          const key = 'cyber_leaderboard';
-          const raw = localStorage.getItem(key);
-          const list = raw ? JSON.parse(raw) : [];
+          const list = loadLocalLeaderboard(50);
           list.push({ alias: alias || '匿名骇客', score, time: parseFloat(time.toFixed(1)), date: Date.now() });
           list.sort((a, b) => b.score - a.score);
-          localStorage.setItem(key, JSON.stringify(list.slice(0, 5)));
+          localStorage.setItem('cyber_leaderboard', JSON.stringify(list.slice(0, 5)));
         } catch (e) {}
       }
 
@@ -2311,6 +2319,7 @@
         if (!response.ok) throw new Error(`排行榜上传失败：${response.status}`);
         const data = await response.json();
         state.leaderboard = Array.isArray(data.entries) ? data.entries : [];
+        renderScoreboard();
       }
 
       async function loadLeaderboard(limit = 10) {
@@ -2342,8 +2351,9 @@
           renderFullLeaderboard(state.leaderboard);
         } catch (error) {
           console.warn('[Cyber Infiltration] full leaderboard load failed.', error);
-          leaderboardMeta.textContent = '全局同步失败';
-          leaderboardList.innerHTML = '<div class="leaderboard-empty">主机链路不稳定，请稍后重试。</div>';
+          const localEntries = loadLocalLeaderboard(50);
+          renderFullLeaderboard(localEntries);
+          leaderboardMeta.textContent = localEntries.length > 0 ? '后端未连接，显示本地记录' : '后端未连接，本地暂无记录';
         }
       }
 
