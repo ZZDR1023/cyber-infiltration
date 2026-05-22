@@ -1617,6 +1617,10 @@
       const MAX_TAUNT_LEN = 50;
       const TUNNEL_ROT_SPEED = 0.72;
       const PLAYER_MOVE_SMOOTH = 0.055;
+      const DEFAULT_SENSITIVITY = 0.8;
+      const PLAYER_CENTER_ANGLE = Math.PI / 2;
+      const PLAYER_MAX_TURN_ANGLE = Math.PI;
+      const PLAYER_TURN_ANGLE_PER_TILT = PLAYER_MAX_TURN_ANGLE / DEFAULT_SENSITIVITY;
       const PLAYER_RADIUS = 15;
       const ZONE_DURATION = 10;
       const GYRO_WAIT_MS = 1500;
@@ -2543,11 +2547,10 @@
         state.rotation += TUNNEL_ROT_SPEED * dt * (state.rushMode ? 2 : 1);
         state.tunnelScroll += getTunnelScrollSpeed() * getTunnelSpeedMultiplier() * dt;
 
-        // 倾斜映射：gamma=±45° → 球抵达环顶部；中间线性 4× 放大（gamma=30° → 球转 120°）
-        state.player.targetAngle = Math.PI / 2 - state.tilt * Math.PI;
-
-        const delta = Math.atan2(Math.sin(state.player.targetAngle - state.player.angle), Math.cos(state.player.targetAngle - state.player.angle));
-        state.player.angle += delta * PLAYER_MOVE_SMOOTH;
+        const currentTurnAngle = clamp(state.player.angle - PLAYER_CENTER_ANGLE, -PLAYER_MAX_TURN_ANGLE, PLAYER_MAX_TURN_ANGLE);
+        const targetTurnAngle = clamp(-state.tilt * PLAYER_TURN_ANGLE_PER_TILT, -PLAYER_MAX_TURN_ANGLE, PLAYER_MAX_TURN_ANGLE);
+        state.player.targetAngle = PLAYER_CENTER_ANGLE + targetTurnAngle;
+        state.player.angle = PLAYER_CENTER_ANGLE + lerp(currentTurnAngle, targetTurnAngle, PLAYER_MOVE_SMOOTH);
         updatePlayerPosition();
 
         // 光球运动拖尾历史
